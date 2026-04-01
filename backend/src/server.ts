@@ -3,9 +3,10 @@ import type { Application, Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import { connectDB } from "./config/db.js";
-import authRoutes from "./routes/auth.routes.js";
-import noteRoutes from "./routes/note.route.js"
+import { connectDB } from "./config/db.ts";
+import authRoutes from "./routes/auth.routes.ts";
+import publicNoteRoutes from "./routes/publicNote.route.ts"
+import protectedNoteRoutes from "./routes/protectedNote.route.ts"
 
 dotenv.config();
 
@@ -24,7 +25,8 @@ app.use(
 app.use(cookieParser());
 
 app.use("/api/auth" ,authRoutes);
-app.use("/api/notes" ,noteRoutes);
+app.use("/api/public/notes" ,publicNoteRoutes);
+app.use("/api/protected/notes" ,protectedNoteRoutes);
 
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     console.error("ERROR 💥:", err);

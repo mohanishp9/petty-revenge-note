@@ -1,5 +1,5 @@
 import mongoose, {Schema} from "mongoose";
-import type { NoteTypes } from "../types/note.types.js";
+import type { NoteTypes } from "../types/note.types.ts";
 
 const noteSchema = new Schema<NoteTypes>({
     user: {
@@ -27,8 +27,8 @@ const noteSchema = new Schema<NoteTypes>({
     categoryEmoji: {
         type: String,
         required: true,
-        enum: ["😠", "😊", "🔥", "💡"], // change later
-        default: "😠",
+        enum: ["😂", "😡", "😳", "😭"], // change later
+        default: "😂",
     },
     likes: { type: Number, default: 0 },
     reactionsCount: {
@@ -36,16 +36,7 @@ const noteSchema = new Schema<NoteTypes>({
         of: Number,
         default: {}
     },
-    comments: [{
-        user: { type: Schema.Types.ObjectId, ref: "User", required: true },
-        text: {
-            type: String,
-            required: true,
-            trim: true,
-            maxlength: 300
-        },
-        createdAt: { type: Date, default: Date.now },
-    }],
+    commentsCount: { type: Number, default: 0 }
 }, {
     timestamps: true,
 });

@@ -12,8 +12,7 @@ export const generateToken = (userId: string): string => {
 
 export const verifyToken = (token: string): JWTPayload | null => {
     try {
-        const decode = jwt.verify(token, process.env.JWT_SECRET as string) as JWTPayload;
-        return decode;
+        return jwt.verify(token, process.env.JWT_SECRET as string) as JWTPayload;
     } catch (error) {
         console.error('Failed to verify token: ', error);
         return null;

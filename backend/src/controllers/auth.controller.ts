@@ -1,9 +1,9 @@
-import { asyncHandler } from "../utils/asyncHandler.js";
-import { registerSchema, loginSchema } from "../utils/validation.js";
-import type { RegisterInput, LoginInput } from "../utils/validation.js";
-import User from "../models/User.model.js";
-import Note from "../models/Note.model.js";
-import { generateToken } from "../utils/jwt.js";
+import { asyncHandler } from "../utils/asyncHandler.ts";
+import { registerSchema, loginSchema } from "../utils/validation.ts";
+import type { RegisterInput, LoginInput } from "../utils/validation.ts";
+import User from "../models/User.model.ts";
+import Note from "../models/Note.model.ts";
+import { generateToken } from "../utils/jwt.ts";
 import type { Request, Response } from "express";
 
 // @desc Create a new user
@@ -75,7 +75,7 @@ const loginUserController = asyncHandler(async (req: Request, res: Response ) =>
 
     const { email, password }: LoginInput = validatedData;
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select("+password");
 
     if(!user) {
         res.status(401);
@@ -122,24 +122,23 @@ const logoutUserController = asyncHandler(async (_req: Request, res: Response) =
 // @access Private
 const getCurrentUserProfileController = asyncHandler(async (req: Request, res: Response) => {
     if (!req.user) {
-        res.status(401);
-        throw new Error("User not found");
+        return res.status(401).json({ message: "User not found" });
     }
-    const notes = await Note.find({ user: req.user._id })
-        .sort({ createdAt: -1 })
-        .lean();
 
-    const user = {
-        _id: req.user._id,
-        username: req.user.username,
-        email: req.user.email,
-    };
+    const [userFromDB, notes] = await Promise.all([
+        User.findById(req.user._id)
+            .select("_id username email")
+            .lean(),
+        Note.find({ user: req.user._id })
+            .sort({ createdAt: -1 })
+            .lean()
+    ]);
+
     res.status(200).json({
         success: true,
-        user,
-        notes
-    })
-})
+        user: userFromDB,
+    });
+});
 
 export {
     registerUserController,

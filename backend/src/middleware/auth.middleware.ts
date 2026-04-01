@@ -3,6 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import User from "../models/User.model.js";
 import type { Request, Response, NextFunction } from "express";
 import type { JWTPayload } from "../utils/jwt.js";
+import { verifyToken } from "../utils/jwt.ts"
 
 const protect = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const cookieToken = req.cookies?.token as string | undefined;
@@ -21,7 +22,7 @@ const protect = asyncHandler(async (req: Request, res: Response, next: NextFunct
     let decoded: JWTPayload;
 
     try {
-        decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JWTPayload;
+        decoded = verifyToken(token) as JWTPayload;
     } catch (error) {
         res.status(401);
         throw new Error("Invalid token");

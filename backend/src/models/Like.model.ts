@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-import type {LikeTypes} from "../types/like.types.js";
+import type {LikeTypes} from "../types/like.types.ts";
 
 const likeSchema = new Schema<LikeTypes>({
     userId: {

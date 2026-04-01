@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-import type { ReactionTypes } from "../types/reaction.types.js";
+import type { ReactionTypes } from "../types/reaction.types.ts";
 
 const reactionSchema = new Schema<ReactionTypes>({
     user: {
@@ -22,7 +22,7 @@ const reactionSchema = new Schema<ReactionTypes>({
 
 
 // Prevent duplicate reaction per user per emoji
-reactionSchema.index({ user: 1, note: 1, emoji: 1 }, { unique: true });
+reactionSchema.index({ user: 1, note: 1 }, { unique: true });
 
 reactionSchema.index({ emoji: 1, note: 1 });
 
