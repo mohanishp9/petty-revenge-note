@@ -16,6 +16,8 @@ const reactionSchema = new Schema<ReactionTypes>({
     },
     emoji: {
         type: String,
+        enum: ["😂", "😡", "😳", "😭"],
+        default: "😂",
         required: true,
     }
 }, { timestamps: true });

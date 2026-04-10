@@ -12,40 +12,46 @@ import type { Request, Response } from "express";
 const registerUserController = asyncHandler(async (req: Request, res: Response) => {
     const result = registerSchema.safeParse(req.body);
 
-    if(!result.success) {
-        res.status(400);
-        const errorMessages = result.error.issues.map(issue => issue.message);
-        throw new Error(errorMessages.join(", "));
+    if (!result.success) {
+        return res.status(400).json({
+            success: false,
+            message: result.error.issues.map((i: any) => i.message).join(", "),
+        });
     }
     const validatedData = result.data;
 
     const { username, email, password }: RegisterInput = validatedData;
 
-    const userExist = await User.findOne({ email });
+    const userExist = await User.findOne({
+        $or: [{ email }, { username }]
+    })
 
     if (userExist) {
-        res.status(409);
-        throw new Error("User already exists");
+        return res.status(409).json({
+            success: false,
+            message:
+                userExist.email === email
+                    ? "Email already registered"
+                    : "Username already taken",
+        });
     }
 
     const user = await User.create({
-        username,
-        email,
-        password,
+        username, // done
+        email, // done
+        password, // done
     })
 
     if (user) {
         const jwtToken = generateToken(user._id.toString());
         res.cookie("token", jwtToken, {
             httpOnly: true,
-            // secure: true,
-            // sameSite: "none",
             secure: process.env.NODE_ENV === "production",
             sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
             maxAge: 7 * 24 * 60 * 60 * 1000,
         })
 
-        res.status(201).json({
+        return res.status(201).json({
             success: true,
             user: {
                 _id: user._id,
@@ -54,8 +60,10 @@ const registerUserController = asyncHandler(async (req: Request, res: Response) 
             },
         })
     } else {
-        res.status(400);
-        throw new Error("Invalid user data");
+        return res.status(400).json({
+            success: false,
+            message: "Invalid user data",
+        });
     }
 });
 
@@ -66,33 +74,32 @@ const loginUserController = asyncHandler(async (req: Request, res: Response ) =>
     const result = loginSchema.safeParse(req.body);
 
     if(!result.success) {
-        res.status(400);
-        const errorMessages = result.error.issues.map(issue => issue.message);
-        throw new Error(errorMessages.join(", "));
+        return res.status(400).json({
+            success: false,
+            message: result.error.issues.map((i: any) => i.message).join(", "),
+        });
     }
 
     const validatedData = result.data;
-
     const { email, password }: LoginInput = validatedData;
-
     const user = await User.findOne({ email }).select("+password");
 
     if(!user) {
-        res.status(401);
-        throw new Error("Invalid Credentials");
+        return res.status(401).json({
+            success: false,
+            message: "Invalid Credentials",
+        });
     }
 
     if(await user.comparePassword(password)) {
         const jwtToken = generateToken(user._id.toString());
         res.cookie("token", jwtToken, {
             httpOnly: true,
-            // secure: true,
-            // sameSite: "none",
             secure: process.env.NODE_ENV === "production",
             sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
             maxAge: 7 * 24 * 60 * 60 * 1000,
         })
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             user: {
                 _id: user._id,
@@ -101,8 +108,10 @@ const loginUserController = asyncHandler(async (req: Request, res: Response ) =>
             },
         })
     } else {
-        res.status(401);
-        throw new Error("Invalid credentials");
+        return res.status(401).json({
+            success: false,
+            message: "Invalid credentials",
+        });
     }
 });
 
@@ -122,7 +131,10 @@ const logoutUserController = asyncHandler(async (_req: Request, res: Response) =
 // @access Private
 const getCurrentUserProfileController = asyncHandler(async (req: Request, res: Response) => {
     if (!req.user) {
-        return res.status(401).json({ message: "User not found" });
+        return res.status(401).json({ 
+            success: false,
+            message: "User not found" 
+        });
     }
 
     const [userFromDB, notes] = await Promise.all([

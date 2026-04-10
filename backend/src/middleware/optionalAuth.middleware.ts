@@ -1,17 +1,18 @@
-import jwt from "jsonwebtoken";
 import type { Request, Response, NextFunction } from "express";
-import type { JWTPayload } from "../utils/jwt.ts";
 import { verifyToken } from "../utils/jwt.ts";
 import mongoose from "mongoose";
 
 export const optionalAuth = (req: Request, res: Response, next: NextFunction) => {
+    const cookieToken = req.cookies?.token as string | undefined;
     const authHeader = req.headers.authorization;
+    const bearerToken = authHeader?.startsWith("Bearer ")
+        ? authHeader.slice("Bearer ".length)
+        : undefined;
+    const token = cookieToken || bearerToken;
 
-    if (!authHeader?.startsWith("Bearer ")) {
+    if (!token) {
         return next();
     }
-
-    const token = authHeader.split(" ")[1] as string;
 
     const decoded = verifyToken(token);
 

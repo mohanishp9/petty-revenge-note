@@ -3,7 +3,14 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --font-crimson: var(--font-crimson);
+  --font-im-fell: var(--font-im-fell);
+  --font-special-elite: var(--font-special-elite);
 }
+/* Optional utility classes */
+.font-crimson      { font-family: var(--font-crimson), Georgia, serif; }
+.font-im-fell      { font-family: var(--font-im-fell), Georgia, serif; }
+.font-special-elite { font-family: var(--font-special-elite), monospace; }
 
 @theme inline {
   --color-background: var(--background);

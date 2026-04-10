@@ -1,5 +1,6 @@
 import { asyncHandler } from "../utils/asyncHandler.ts";
 import Note from "../models/Note.model.ts";
+import User from "../models/User.model.ts";
 import Reaction from "../models/Reaction.model.ts";
 import Comment from "../models/Comment.model.ts";
 import mongoose, { type SortOrder } from "mongoose";
@@ -15,7 +16,7 @@ const getNotesController = asyncHandler(async (req: Request, res: Response) => {
     const sortQuery = sort as string;
 
     const pageQuery = Number(page) || 1;
-    const limitQuery = Number(limit) || 10;
+    const limitQuery = Number(limit) || 12;
 
     let sortOption: Record<string, SortOrder> = { createdAt: -1 };
 
@@ -26,6 +27,7 @@ const getNotesController = asyncHandler(async (req: Request, res: Response) => {
     }
 
     const notes = await Note.find()
+        .populate("user", "username")
         .select("-comments")
         .sort(sortOption)
         .skip((pageQuery - 1) * limitQuery)
@@ -153,7 +155,7 @@ const getCommentsController = asyncHandler(async (req: Request, res: Response) =
 });
 
 export {
-    getNotesController,
+    getNotesController, // done
     getTopFiveNotesByEmojiController,
     getCommentsController,
 }

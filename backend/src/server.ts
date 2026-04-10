@@ -31,9 +31,12 @@ app.use("/api/protected/notes" ,protectedNoteRoutes);
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     console.error("ERROR 💥:", err);
 
-    res.status(err.statusCode || 500).json({
+    const statusCode = err.statusCode || (res.statusCode !== 200 ? res.statusCode : 500);
+    
+    res.status(statusCode).json({
         success: false,
         message: err.message || "Server Error",
+        stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
     });
 });
 
