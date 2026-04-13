@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { getAllNotesAPI } from "@/features/publicNote/publicNoteApi";
 import { getAllNotesState, getNotesParams } from "@/features/publicNote/types";
+import { addComment } from "@/features/comments/commentsSlice";
 
 // like
 import { toggleLikeApi } from "@/features/toggleLike/toggleLikeApi";
@@ -113,6 +114,13 @@ const publicNoteSlice = createSlice({
                     }
 
                     note.hasLiked = liked;
+                }
+            })
+            .addCase(addComment.fulfilled, (state, action) => {
+                const note = state.notes.find((currentNote) => currentNote._id === action.payload.noteId);
+
+                if (note) {
+                    note.commentsCount += 1;
                 }
             })
             .addCase(reactToNote.fulfilled, (state, action) => {

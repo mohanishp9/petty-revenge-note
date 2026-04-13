@@ -276,7 +276,7 @@ const getMyNotes = asyncHandler(async (req: Request, res: Response) => {
 export {
     createNoteController,
     toggleLikeController, // done
-    reactionController,
+    reactionController, // done
     addCommentController,
     getMyNotes,
 }
