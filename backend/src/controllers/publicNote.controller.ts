@@ -157,5 +157,5 @@ const getCommentsController = asyncHandler(async (req: Request, res: Response) =
 export {
     getNotesController, // done
     getTopFiveNotesByEmojiController,
-    getCommentsController,
+    getCommentsController, // done
 }

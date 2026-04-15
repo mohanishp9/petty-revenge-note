@@ -277,6 +277,6 @@ export {
     createNoteController,
     toggleLikeController, // done
     reactionController, // done
-    addCommentController,
+    addCommentController, // done
     getMyNotes,
 }
