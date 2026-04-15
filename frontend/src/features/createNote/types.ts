@@ -4,7 +4,7 @@ export interface CreateNoteParams {
     showUsername: boolean;
     subject: string;
     content: string;
-    category: "😂" | "😡" | "😳" | "😭";
+    categoryEmoji: "😂" | "😡" | "😳" | "😭";
 }
 
 export interface CreateNoteResponse {
