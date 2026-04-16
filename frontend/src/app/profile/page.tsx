@@ -256,8 +256,8 @@ export default function ProfilePage() {
             </div>
 
             {isCreateModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(20,10,0,0.42)", backdropFilter: "blur(3px)" }}>
-                    <div className="relative w-full max-w-4xl">
+                <div className="fixed inset-0 z-50 flex items-start md:items-center justify-center p-4 overflow-y-auto" style={{ background: "rgba(20,10,0,0.42)", backdropFilter: "blur(3px)" }}>
+                    <div className="relative w-full max-w-4xl max-h-[95vh]">
                         <div className="absolute -left-4 top-8 hidden h-[82%] w-8 rounded-l-md border border-r-0 md:block" style={{ background: "linear-gradient(180deg, #3c250a 0%, #241304 100%)", borderColor: "rgba(30,15,3,0.45)" }} />
                         <div className="absolute left-[-7px] top-16 hidden w-6 md:flex md:flex-col md:gap-4">{Array.from({ length: 11 }).map((_, i) => <span key={i} className="h-4 w-4 rounded-full border" style={{ background: "#120900", borderColor: "#5b3b15" }} />)}</div>
                         <div className="relative overflow-hidden rounded-sm border p-6 md:p-8" style={{ background: "repeating-linear-gradient(180deg, rgba(124,83,20,0.02), rgba(124,83,20,0.02) 33px, rgba(124,83,20,0.14) 33px, rgba(124,83,20,0.14) 34px),linear-gradient(180deg, #f6ebc7 0%, #f2e4ba 48%, #eeddb0 100%)", borderColor: "rgba(120,80,20,0.24)", boxShadow: "0 30px 70px rgba(40,20,0,0.28)" }}>

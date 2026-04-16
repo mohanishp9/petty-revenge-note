@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { getMyNotesAPI } from "@/features/getMyNotes/getMyNotesApi";
 import { GetMyNotesState } from "@/features/getMyNotes/types";
+import { getErrorMessage } from "@/utils/getErrorMessage";
 
 const initialState: GetMyNotesState = {
     notes: [],
@@ -24,10 +25,8 @@ export const getMyNotes = createAsyncThunk(
                 ...res,
                 page: params.page,
             };
-        } catch (err: any) {
-            return thunkAPI.rejectWithValue(
-                err.response?.data?.message || "Failed to fetch notes"
-            );
+        } catch (err) {
+            return thunkAPI.rejectWithValue(getErrorMessage(err));
         }
     }
 );
@@ -72,9 +71,9 @@ const getMyNotesSlice = createSlice({
                 state.total = total;
             })
 
-            .addCase(getMyNotes.rejected, (state, action: any) => {
+            .addCase(getMyNotes.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload;
+                state.error = action.payload as string;
             });
     },
 });

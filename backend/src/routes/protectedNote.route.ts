@@ -5,9 +5,9 @@ import {
     reactionController,
     addCommentController,
     getMyNotes,
-} from "../controllers/protectedNote.controller.ts";
-import { apiLimiter } from "../middleware/rateLimit.middleware.ts";
-import { protect } from "../middleware/auth.middleware.ts";
+} from "../controllers/protectedNote.controller";
+import { apiLimiter } from "../middleware/rateLimit.middleware";
+import { protect } from "../middleware/auth.middleware";
 
 const router = express.Router();
 

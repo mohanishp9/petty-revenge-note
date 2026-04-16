@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { getAllCommentsAPI, addCommentAPI } from "@/features/comments/commentsApi";
 import { CommentsState, CommentsParams, AddCommentParams } from "@/features/comments/types";
+import { getErrorMessage } from "@/utils/getErrorMessage";
 
 export const initialState: CommentsState = {
     comments: [],
@@ -24,10 +25,8 @@ export const getNoteComments = createAsyncThunk(
                 ...res,
                 page: params.page || 1
             };
-        } catch (err: any) {
-            return thunkAPI.rejectWithValue(
-                err.response?.data?.message || "Failed to fetch comments"
-            );
+        } catch (err) {
+            return thunkAPI.rejectWithValue(getErrorMessage(err));
         }
     }
 );
@@ -39,10 +38,8 @@ export const addComment = createAsyncThunk(
             const res = await addCommentAPI(params);
 
             return res.comment;
-        } catch (err: any) {
-            return thunkAPI.rejectWithValue(
-                err.response?.data?.message || "Failed to add comment"
-            );
+        } catch (err) {
+            return thunkAPI.rejectWithValue(getErrorMessage(err));
         }
     }
 );
@@ -101,9 +98,9 @@ const commentsSlice = createSlice({
                 state.hasMore = hasMore;
             })
 
-            .addCase(getNoteComments.rejected, (state, action: any) => {
+            .addCase(getNoteComments.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload;
+                state.error = action.payload as string;
             })
             .addCase(addComment.fulfilled,  (state, action) => {
                 const newComment = action.payload;

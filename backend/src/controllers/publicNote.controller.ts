@@ -1,12 +1,12 @@
-import { asyncHandler } from "../utils/asyncHandler.ts";
-import Note from "../models/Note.model.ts";
-import User from "../models/User.model.ts";
-import Reaction from "../models/Reaction.model.ts";
-import Comment from "../models/Comment.model.ts";
+import { asyncHandler } from "../utils/asyncHandler";
+import Note from "../models/Note.model";
+import User from "../models/User.model";
+import Reaction from "../models/Reaction.model";
+import Comment from "../models/Comment.model";
 import mongoose, { type SortOrder } from "mongoose";
-import { emojiSchema, noteQuerySchema, createNoteSchema } from "../utils/note.validator.ts";
+import { emojiSchema, noteQuerySchema, createNoteSchema } from "../utils/note.validator";
 import type { Request, Response } from "express";
-import Like from "../models/Like.model.ts";
+import Like from "../models/Like.model";
 
 // @desc Get all notes also sort
 // @route GET /?sort=mostLiked&page=1&limit=10

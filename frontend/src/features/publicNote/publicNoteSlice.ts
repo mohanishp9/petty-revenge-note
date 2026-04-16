@@ -9,6 +9,7 @@ import { ToggleLikeParams } from "@/features/toggleLike/types";
 
 // reaction
 import { reactionApi } from "@/features/reaction/rectionApi";
+import { getErrorMessage } from "@/utils/getErrorMessage";
 
 export const initialState: getAllNotesState = {
     notes: [],
@@ -26,10 +27,8 @@ export const getAllNotes = createAsyncThunk(
         try {
             const res = await getAllNotesAPI(data);
             return res;
-        } catch (err: any) {
-            return thunkAPI.rejectWithValue(
-                err.response?.data?.message || "Failed to fetch notes"
-            );
+        } catch (err) {
+            return thunkAPI.rejectWithValue(getErrorMessage(err));
         }
     }
 );
@@ -44,10 +43,8 @@ export const toggleLike = createAsyncThunk(
                 noteId: params.noteId,
                 liked: res.liked
             };
-        } catch (err: any) {
-            return thunkAPI.rejectWithValue(
-                err.response?.data?.message || "Failed to toggle like"
-            );
+        } catch (err) {
+            return thunkAPI.rejectWithValue(getErrorMessage(err));
         }
     }
 );
@@ -63,10 +60,8 @@ export const reactToNote = createAsyncThunk(
                 reacted: res.reacted,
                 emoji: res.emoji, // can be null
             };
-        } catch (err: any) {
-            return thunkAPI.rejectWithValue(
-                err.response?.data?.message || "Reaction failed"
-            );
+        } catch (err) {
+            return thunkAPI.rejectWithValue(getErrorMessage(err));
         }
     }
 );
@@ -96,9 +91,9 @@ const publicNoteSlice = createSlice({
                     : incomingNotes;
                 state.count = action.payload.count;
             })
-            .addCase(getAllNotes.rejected, (state, action: any) => {
+            .addCase(getAllNotes.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload;
+                state.error = action.payload as string;
             })
             .addCase(toggleLike.fulfilled, (state, action) => {
                 const { noteId, liked } = action.payload;

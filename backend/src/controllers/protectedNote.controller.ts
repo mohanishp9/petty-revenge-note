@@ -1,12 +1,12 @@
-import { asyncHandler } from "../utils/asyncHandler.ts";
-import Note from "../models/Note.model.ts";
-import Like from "../models/Like.model.ts";
-import Reaction from "../models/Reaction.model.ts";
-import Comment from "../models/Comment.model.ts";
-import { createNoteSchema } from "../utils/note.validator.ts";
-import { reactionSchema } from "../utils/reaction.validator.ts";
-import { addCommentSchema } from "../utils/comment.validator.ts";
-import type { CreateNoteInput } from "../utils/note.validator.ts";
+import { asyncHandler } from "../utils/asyncHandler";
+import Note from "../models/Note.model";
+import Like from "../models/Like.model";
+import Reaction from "../models/Reaction.model";
+import Comment from "../models/Comment.model";
+import { createNoteSchema } from "../utils/note.validator";
+import { reactionSchema } from "../utils/reaction.validator";
+import { addCommentSchema } from "../utils/comment.validator";
+import type { CreateNoteInput } from "../utils/note.validator";
 import type { Request, Response } from "express";
 import mongoose from "mongoose";
 

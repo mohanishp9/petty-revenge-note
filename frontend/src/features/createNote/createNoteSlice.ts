@@ -1,8 +1,9 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { createNoteAPI } from "./createNoteApi";
-import { CreateNoteParams } from "./types";
+import { CreateNoteParams, CreateNoteState } from "./types";
+import { getErrorMessage } from "@/utils/getErrorMessage";
 
-export const initialState = {
+export const initialState: CreateNoteState = {
     loading: false,
     error: null,
     success: false,
@@ -14,10 +15,8 @@ export const createNote = createAsyncThunk(
         try {
             const res = await createNoteAPI(data);
             return res.data;
-        } catch (err: any) {
-            return thunkAPI.rejectWithValue(
-                err.response?.data?.message || "Failed to create note"
-            );
+        } catch (err) {
+            return thunkAPI.rejectWithValue(getErrorMessage(err));
         }
     }
 );
@@ -43,9 +42,9 @@ const createNoteSlice = createSlice({
                 state.loading = false;
                 state.success = true;
             })
-            .addCase(createNote.rejected, (state, action: any) => {
+            .addCase(createNote.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload;
+                state.error = action.payload as string;
             });
     },
 });

@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { getTopNoteByEmojiAPI } from "@/features/topNotesByEmoji/topNotesByEmojiApi";
 import { GetTopNotesByEmojiState } from "@/features/topNotesByEmoji/types";
+import { getErrorMessage } from "@/utils/getErrorMessage";
 
 const initialState: GetTopNotesByEmojiState = {
     data: [],
@@ -19,10 +20,8 @@ export const getTopNotesByEmoji = createAsyncThunk(
                 ...res,
                 selectedEmoji: emoji
             };
-        } catch (err: any) {
-            return thunkAPI.rejectWithValue(
-                err.response?.data?.message || "Failed to fetch top notes"
-            );
+        } catch (err) {
+            return thunkAPI.rejectWithValue(getErrorMessage(err));
         }
     }
 );
@@ -47,9 +46,9 @@ const topNotesByEmojiSlice = createSlice({
                 state.data = action.payload.data;
                 state.selectedEmoji = action.payload.selectedEmoji;
             })
-            .addCase(getTopNotesByEmoji.rejected, (state, action: any) => {
+            .addCase(getTopNotesByEmoji.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload;
+                state.error = action.payload as string;
             });
     },
 });

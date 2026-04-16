@@ -1,9 +1,9 @@
-import { asyncHandler } from "../utils/asyncHandler.ts";
-import { registerSchema, loginSchema } from "../utils/validation.ts";
-import type { RegisterInput, LoginInput } from "../utils/validation.ts";
-import User from "../models/User.model.ts";
-import Note from "../models/Note.model.ts";
-import { generateToken } from "../utils/jwt.ts";
+import { asyncHandler } from "../utils/asyncHandler";
+import { registerSchema, loginSchema } from "../utils/validation";
+import type { RegisterInput, LoginInput } from "../utils/validation";
+import User from "../models/User.model";
+import Note from "../models/Note.model";
+import { generateToken } from "../utils/jwt";
 import type { Request, Response } from "express";
 
 // @desc Create a new user
@@ -70,10 +70,10 @@ const registerUserController = asyncHandler(async (req: Request, res: Response) 
 // @desc Login a user
 // @route POST /login
 // @access Public
-const loginUserController = asyncHandler(async (req: Request, res: Response ) => {
+const loginUserController = asyncHandler(async (req: Request, res: Response) => {
     const result = loginSchema.safeParse(req.body);
 
-    if(!result.success) {
+    if (!result.success) {
         return res.status(400).json({
             success: false,
             message: result.error.issues.map((i: any) => i.message).join(", "),
@@ -84,14 +84,14 @@ const loginUserController = asyncHandler(async (req: Request, res: Response ) =>
     const { email, password }: LoginInput = validatedData;
     const user = await User.findOne({ email }).select("+password");
 
-    if(!user) {
+    if (!user) {
         return res.status(401).json({
             success: false,
             message: "Invalid Credentials",
         });
     }
 
-    if(await user.comparePassword(password)) {
+    if (await user.comparePassword(password)) {
         const jwtToken = generateToken(user._id.toString());
         res.cookie("token", jwtToken, {
             httpOnly: true,
@@ -131,9 +131,9 @@ const logoutUserController = asyncHandler(async (_req: Request, res: Response) =
 // @access Private
 const getCurrentUserProfileController = asyncHandler(async (req: Request, res: Response) => {
     if (!req.user) {
-        return res.status(401).json({ 
+        return res.status(401).json({
             success: false,
-            message: "User not found" 
+            message: "User not found"
         });
     }
 

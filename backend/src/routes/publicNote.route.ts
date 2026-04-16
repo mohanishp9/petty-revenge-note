@@ -3,9 +3,9 @@ import {
     getNotesController,
     getTopNotesByEmojiController,
     getCommentsController,
-} from "../controllers/publicNote.controller.ts";
-import { optionalAuth } from "../middleware/optionalAuth.middleware.ts";
-import { apiLimiter } from "../middleware/rateLimit.middleware.ts";
+} from "../controllers/publicNote.controller";
+import { optionalAuth } from "../middleware/optionalAuth.middleware";
+import { apiLimiter } from "../middleware/rateLimit.middleware";
 
 const router = express.Router();
 

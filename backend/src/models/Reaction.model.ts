@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-import type { ReactionTypes } from "../types/reaction.types.ts";
+import type { ReactionTypes } from "../types/reaction.types";
 
 const reactionSchema = new Schema<ReactionTypes>({
     user: {

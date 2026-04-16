@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import type { Model, HydratedDocument } from "mongoose";
-import type { IUser } from "../types/user.types.ts";
+import type { IUser } from "../types/user.types";
 import bcrypt from "bcryptjs";
 
 const { Schema } = mongoose;

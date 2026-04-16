@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { loginAPI, logoutAPI, registerAPI, getCurrentUserAPI } from "@/features/auth/authApi";
 import { AuthState } from "./types";
+import { getErrorMessage } from "@/utils/getErrorMessage";
 
 const SESSION_FLAG = "hasSession";
 
@@ -21,10 +22,8 @@ export const loginUser = createAsyncThunk(
             localStorage.removeItem("token");
 
             return res;
-        } catch (err: any) {
-            return thunkAPI.rejectWithValue(
-                err.response?.data?.message || "Login failed"
-            );
+        } catch (err) {
+            return thunkAPI.rejectWithValue(getErrorMessage(err));
         }
     }
 );
@@ -32,17 +31,15 @@ export const loginUser = createAsyncThunk(
 // register
 export const registerUser = createAsyncThunk(
     "auth/register",
-    async (data: { username: string; email: string; password: string }, thunkAPI ) => {
+    async (data: { username: string; email: string; password: string }, thunkAPI) => {
         try {
             const res = await registerAPI(data);
             localStorage.setItem(SESSION_FLAG, "true");
             localStorage.removeItem("token");
 
             return res;
-        } catch (err: any) {
-            return thunkAPI.rejectWithValue(
-                err.response?.data?.message || err.message || "Register failed"
-            );
+        } catch (err) {
+            return thunkAPI.rejectWithValue(getErrorMessage(err));
         }
     }
 );
@@ -55,10 +52,8 @@ export const logoutUser = createAsyncThunk(
             localStorage.removeItem(SESSION_FLAG);
             localStorage.removeItem("token");
             return res;
-        } catch (err: any) {
-            return thunkAPI.rejectWithValue(
-                err.response?.data?.message || "Logout failed"
-            );
+        } catch (err) {
+            return thunkAPI.rejectWithValue(getErrorMessage(err));
         }
     }
 );
@@ -69,10 +64,8 @@ export const getCurrentUser = createAsyncThunk(
         try {
             const res = await getCurrentUserAPI();
             return res.user;
-        } catch (err: any) {
-            return thunkAPI.rejectWithValue(
-                err.response?.data?.message || "Failed to fetch user"
-            );
+        } catch (err) {
+            return thunkAPI.rejectWithValue(getErrorMessage(err));
         }
     }
 );
@@ -81,12 +74,12 @@ const authSlice = createSlice({
     name: "auth",
     initialState,
     reducers: {
-        logout(state) {
-            state.user = null;
-            state.token = null;
-            localStorage.removeItem(SESSION_FLAG);
-            localStorage.removeItem("token");
-        },
+        // logout(state) {
+        //     state.user = null;
+        //     state.token = null;
+        //     localStorage.removeItem(SESSION_FLAG);
+        //     localStorage.removeItem("token");
+        // },
         setUserFromStorage(state) {
             if (typeof window !== "undefined") {
                 const hasSession = localStorage.getItem(SESSION_FLAG) === "true";
@@ -100,7 +93,7 @@ const authSlice = createSlice({
     extraReducers: (builder) => {
         builder
 
-        // Login
+            // Login
             .addCase(loginUser.pending, (state) => {
                 state.loading = true;
                 state.error = null;
@@ -110,12 +103,12 @@ const authSlice = createSlice({
                 state.user = action.payload.user;
                 state.token = "cookie-session";
             })
-            .addCase(loginUser.rejected, (state, action: any) => {
+            .addCase(loginUser.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload;
+                state.error = action.payload as string;
             })
 
-        // register
+            // register
             .addCase(registerUser.pending, (state) => {
                 state.loading = true;
                 state.error = null;
@@ -125,9 +118,9 @@ const authSlice = createSlice({
                 state.user = action.payload.user;
                 state.token = "cookie-session";
             })
-            .addCase(registerUser.rejected, (state, action: any) => {
+            .addCase(registerUser.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload;
+                state.error = action.payload as string;
             })
             .addCase(logoutUser.pending, (state) => {
                 state.loading = true;
@@ -138,9 +131,9 @@ const authSlice = createSlice({
                 state.user = null;
                 state.token = null;
             })
-            .addCase(logoutUser.rejected, (state, action: any) => {
+            .addCase(logoutUser.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload;
+                state.error = action.payload as string;
             })
             .addCase(getCurrentUser.pending, (state) => {
                 state.loading = true;
@@ -158,5 +151,5 @@ const authSlice = createSlice({
     },
 });
 
-export const { logout, setUserFromStorage, clearError } = authSlice.actions;
+export const { setUserFromStorage, clearError } = authSlice.actions;
 export default authSlice.reducer;

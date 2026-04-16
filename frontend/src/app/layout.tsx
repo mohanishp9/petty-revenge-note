@@ -3,28 +3,28 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/app/providers";
 import Navbar from "@/components/Navbar";
-import { Crimson_Text, IM_Fell_English, Special_Elite } from "next/font/google";
+// import { Crimson_Text, IM_Fell_English, Special_Elite } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 
-const crimsonText = Crimson_Text({
-  subsets: ["latin"],
-  weight: ["400", "600"],
-  style: ["normal", "italic"],
-  variable: "--font-crimson",
-});
+// const crimsonText = Crimson_Text({
+//   subsets: ["latin"],
+//   weight: ["400", "600"],
+//   style: ["normal", "italic"],
+//   variable: "--font-crimson",
+// });
 
-const imFellEnglish = IM_Fell_English({
-  subsets: ["latin"],
-  weight: ["400"],
-  style: ["normal", "italic"],
-  variable: "--font-im-fell",
-});
+// const imFellEnglish = IM_Fell_English({
+//   subsets: ["latin"],
+//   weight: ["400"],
+//   style: ["normal", "italic"],
+//   variable: "--font-im-fell",
+// });
 
-const specialElite = Special_Elite({
-  subsets: ["latin"],
-  weight: ["400"],
-  variable: "--font-special-elite",
-});
+// const specialElite = Special_Elite({
+//   subsets: ["latin"],
+//   weight: ["400"],
+//   variable: "--font-special-elite",
+// });
 
 
 const geistSans = Geist({

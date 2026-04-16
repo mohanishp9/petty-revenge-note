@@ -1,4 +1,4 @@
-import { IUser } from "./user.types.ts";
+import { IUser } from "./user.types";
 
 import { Types } from "mongoose";
 

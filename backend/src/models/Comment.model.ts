@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-import type { CommentTypes } from "../types/comment.types.ts";
+import type { CommentTypes } from "../types/comment.types";
 
 const commentSchema = new Schema<CommentTypes>(
     {

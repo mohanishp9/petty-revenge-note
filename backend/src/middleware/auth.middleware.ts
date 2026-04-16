@@ -1,9 +1,9 @@
 import jwt from 'jsonwebtoken';
-import { asyncHandler } from "../utils/asyncHandler.js";
-import User from "../models/User.model.js";
+import { asyncHandler } from "../utils/asyncHandler";
+import User from "../models/User.model";
 import type { Request, Response, NextFunction } from "express";
-import type { JWTPayload } from "../utils/jwt.js";
-import { verifyToken } from "../utils/jwt.ts"
+import type { JWTPayload } from "../utils/jwt";
+import { verifyToken } from "../utils/jwt"
 
 const protect = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const cookieToken = req.cookies?.token as string | undefined;
