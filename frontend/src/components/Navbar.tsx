@@ -154,8 +154,8 @@ const Navbar = () => {
                 </nav>
 
                 {/* Profile button */}
-                <button
-                    type="button"
+                <Link
+                    href="/profile"
                     aria-label="Profile"
                     className="flex items-center justify-center transition"
                     style={{
@@ -178,7 +178,7 @@ const Navbar = () => {
                     }}
                 >
                     <ShieldUser style={{ width: 18, height: 18 }} />
-                </button>
+                </Link>
 
             </div>
         </header>

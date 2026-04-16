@@ -22,3 +22,8 @@ export const logoutAPI = async (): Promise<{ success: boolean; message: string }
     const res = await api.post("/auth/logout");
     return res.data;
 };
+
+export const getCurrentUserAPI = async () => {
+    const res = await api.get("/auth/profile");
+    return res.data;
+};

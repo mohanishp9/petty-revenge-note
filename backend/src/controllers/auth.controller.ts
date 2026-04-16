@@ -153,8 +153,8 @@ const getCurrentUserProfileController = asyncHandler(async (req: Request, res: R
 });
 
 export {
-    registerUserController,
-    loginUserController,
-    logoutUserController,
-    getCurrentUserProfileController,
+    registerUserController, // done
+    loginUserController, // done
+    logoutUserController, // done
+    getCurrentUserProfileController, // done
 };

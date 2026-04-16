@@ -274,9 +274,9 @@ const getMyNotes = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export {
-    createNoteController,
+    createNoteController, // done
     toggleLikeController, // done
     reactionController, // done
     addCommentController, // done
-    getMyNotes,
+    getMyNotes, // done
 }

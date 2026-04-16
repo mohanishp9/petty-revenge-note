@@ -3,13 +3,14 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
-import { Heart, LoaderCircle, MessageCircle, Send, SmilePlus, X } from "lucide-react";
+import { ChevronDown, Heart, LoaderCircle, MessageCircle, Send, SmilePlus, X } from "lucide-react";
 import { useAppDispatch } from "@/app/hook/dispatch";
 import { addComment, getNoteComments, resetComments } from "@/features/comments/commentsSlice";
 import type { CommentType, CommentsState } from "@/features/comments/types";
 import { setUserFromStorage } from "@/features/auth/authSlice";
 import { getAllNotes, reactToNote, toggleLike } from "@/features/publicNote/publicNoteSlice";
 import type { Note, getNotesParams } from "@/features/publicNote/types";
+import { clearTopNotesByEmoji, getTopNotesByEmoji } from "@/features/topNotesByEmoji/topNotesByEmojiSlice";
 import type { RootState } from "@/store/store";
 
 const DEFAULT_REACTIONS = ["😂", "😡", "😳", "😭"] as const;
@@ -408,31 +409,44 @@ const Dashboard = () => {
     );
     const { token } = useSelector((state: RootState) => state.auth);
     const commentsState = useSelector((state: RootState) => state.comments);
+    const topNotesByEmoji = useSelector((state: RootState) => state.getTopNotesByEmoji);
 
     const [sort, setSort] = useState<getNotesParams["sort"] | undefined>(undefined);
     const [page, setPage] = useState(1);
     const [activeCommentNoteId, setActiveCommentNoteId] = useState<string | null>(null);
     const [commentInput, setCommentInput] = useState("");
+    const [selectedEmoji, setSelectedEmoji] = useState("");
+    const [isEmojiMenuOpen, setIsEmojiMenuOpen] = useState(false);
     const loadMoreRef = useRef<HTMLDivElement | null>(null);
+    const emojiMenuRef = useRef<HTMLDivElement | null>(null);
 
-    const activeNote = notes.find((note) => note._id === activeCommentNoteId) ?? null;
+    const displayedNotes = selectedEmoji
+        ? topNotesByEmoji.data.map((item) => item.note)
+        : notes;
+    const activeNote = displayedNotes.find((note) => note._id === activeCommentNoteId) ?? null;
     const isCommentPanelOpen = Boolean(activeCommentNoteId);
     const hasMore = count === NOTES_PER_PAGE || count === 0;
+    const feedLoading = selectedEmoji ? topNotesByEmoji.loading : loading;
+    const feedError = selectedEmoji ? topNotesByEmoji.error : error;
 
     useEffect(() => {
         dispatch(setUserFromStorage());
     }, [dispatch]);
 
     useEffect(() => {
+        if (selectedEmoji) {
+            return;
+        }
+
         dispatch(
             getAllNotes(sort ? { sort, page, limit: NOTES_PER_PAGE } : { page, limit: NOTES_PER_PAGE })
         );
-    }, [dispatch, sort, page, token]);
+    }, [dispatch, sort, page, selectedEmoji, token]);
 
     useEffect(() => {
         const node = loadMoreRef.current;
 
-        if (!node || !hasMore) {
+        if (!node || !hasMore || selectedEmoji) {
             return;
         }
 
@@ -450,7 +464,22 @@ const Dashboard = () => {
         observer.observe(node);
 
         return () => observer.disconnect();
-    }, [hasMore, loading]);
+    }, [hasMore, loading, selectedEmoji]);
+
+    useEffect(() => {
+        if (!isEmojiMenuOpen) {
+            return;
+        }
+
+        const handlePointerDown = (event: MouseEvent) => {
+            if (!emojiMenuRef.current?.contains(event.target as Node)) {
+                setIsEmojiMenuOpen(false);
+            }
+        };
+
+        document.addEventListener("mousedown", handlePointerDown);
+        return () => document.removeEventListener("mousedown", handlePointerDown);
+    }, [isEmojiMenuOpen]);
 
     useEffect(() => {
         if (!activeCommentNoteId) {
@@ -468,8 +497,29 @@ const Dashboard = () => {
     }, [activeCommentNoteId, dispatch]);
 
     const handleSortChange = (newSort: "mostLiked" | "oldest" | undefined) => {
+        if (selectedEmoji) {
+            setSelectedEmoji("");
+            dispatch(clearTopNotesByEmoji());
+        }
         setSort(newSort);
         setPage(1);
+    };
+
+    const handleEmojiSortChange = (emoji: string) => {
+        setActiveCommentNoteId(null);
+        setCommentInput("");
+        dispatch(resetComments());
+        setIsEmojiMenuOpen(false);
+
+        if (!emoji) {
+            setSelectedEmoji("");
+            dispatch(clearTopNotesByEmoji());
+            setPage(1);
+            return;
+        }
+
+        setSelectedEmoji(emoji);
+        dispatch(getTopNotesByEmoji(emoji));
     };
 
     const handleCommentToggle = (noteId: string) => {
@@ -557,15 +607,85 @@ const Dashboard = () => {
                         {label}
                     </button>
                 ))}
+
+                <div className="relative" ref={emojiMenuRef}>
+                    <button
+                        type="button"
+                        onClick={() => setIsEmojiMenuOpen((current) => !current)}
+                        className="font-special-elite flex min-h-[42px] items-center gap-3 rounded-sm px-3 py-2 text-[10px] uppercase tracking-widest transition"
+                        style={{
+                            border: `1px solid ${selectedEmoji ? "rgba(180,130,40,0.6)" : "rgba(180,130,40,0.25)"}`,
+                            background: selectedEmoji ? "rgba(180,130,40,0.12)" : "transparent",
+                            color: "#8a6a30",
+                        }}
+                    >
+                        <span>Top By Emoji</span>
+                        <span
+                            className="flex min-w-[72px] items-center justify-center rounded-sm px-3 py-1.5 normal-case tracking-normal"
+                            style={{
+                                background: selectedEmoji ? "rgba(180,130,40,0.18)" : "rgba(180,130,40,0.08)",
+                                border: "1px solid rgba(180,130,40,0.2)",
+                                color: "#6a4515",
+                                fontSize: selectedEmoji ? "1.35rem" : "0.8rem",
+                                lineHeight: 1,
+                            }}
+                        >
+                            {selectedEmoji || "All"}
+                        </span>
+                        <ChevronDown className="h-3 w-3 flex-shrink-0" />
+                    </button>
+
+                    {isEmojiMenuOpen && (
+                        <div
+                            className="absolute left-0 top-[calc(100%+8px)] z-20 min-w-[220px] rounded-sm p-2"
+                            style={{
+                                background: "linear-gradient(180deg, #f4e7c1 0%, #eeddb0 100%)",
+                                border: "1px solid rgba(120,80,20,0.28)",
+                                boxShadow: "0 12px 28px rgba(40,20,0,0.24)",
+                            }}
+                        >
+                            <button
+                                type="button"
+                                onClick={() => handleEmojiSortChange("")}
+                                className="font-special-elite flex w-full items-center justify-between rounded-sm px-3 py-2 text-[10px] uppercase tracking-widest transition"
+                                style={{
+                                    background: !selectedEmoji ? "rgba(180,130,40,0.14)" : "transparent",
+                                    color: "#6a4515",
+                                }}
+                            >
+                                <span>All</span>
+                                {!selectedEmoji && <span>•</span>}
+                            </button>
+                            {DEFAULT_REACTIONS.map((emoji) => (
+                                <button
+                                    key={emoji}
+                                    type="button"
+                                    onClick={() => handleEmojiSortChange(emoji)}
+                                    className="font-special-elite flex w-full items-center justify-between rounded-sm px-3 py-2 text-[10px] uppercase tracking-widest transition"
+                                    style={{
+                                        background: selectedEmoji === emoji ? "rgba(180,130,40,0.14)" : "transparent",
+                                        color: "#6a4515",
+                                    }}
+                                >
+                                    <span className="flex items-center gap-3">
+                                        <span className="text-[1.65rem] leading-none">{emoji}</span>
+                                        <span>{selectedEmoji === emoji ? "Selected" : "Choose"}</span>
+                                    </span>
+                                    {selectedEmoji === emoji && <span>•</span>}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
 
             <div className="w-full px-4 py-6 sm:px-6 lg:px-8">
-                {loading && notes.length === 0 && (
+                {feedLoading && displayedNotes.length === 0 && (
                     <p className="font-crimson italic" style={{ color: "#7a5a22" }}>
                         Retrieving the records...
                     </p>
                 )}
-                {error && <p className="font-crimson italic" style={{ color: "#8a2510" }}>{error}</p>}
+                {feedError && <p className="font-crimson italic" style={{ color: "#8a2510" }}>{feedError}</p>}
 
                 <div className="flex flex-col gap-6 xl:flex-row">
                     <section
@@ -580,7 +700,7 @@ const Dashboard = () => {
                                     : "repeat(auto-fit, minmax(360px, 1fr))",
                             }}
                         >
-                            {notes.map((note) => (
+                            {displayedNotes.map((note) => (
                                 <NoteCard
                                     key={note._id}
                                     isCommentsOpen={activeCommentNoteId === note._id}
@@ -591,15 +711,21 @@ const Dashboard = () => {
                             ))}
                         </div>
 
-                        <div ref={loadMoreRef} className="h-8" />
+                        {!selectedEmoji && <div ref={loadMoreRef} className="h-8" />}
 
-                        {loading && notes.length > 0 && (
+                        {!selectedEmoji && loading && displayedNotes.length > 0 && (
                             <p className="font-crimson mt-6 text-center italic" style={{ color: "#7a5a22" }}>
                                 Loading more notes...
                             </p>
                         )}
 
-                        {!hasMore && notes.length > 0 && (
+                        {selectedEmoji && displayedNotes.length > 0 && (
+                            <p className="font-special-elite mt-6 text-center text-[10px] uppercase tracking-[0.25em]" style={{ color: "#8a6a30" }}>
+                                Top notes for {selectedEmoji}
+                            </p>
+                        )}
+
+                        {!selectedEmoji && !hasMore && displayedNotes.length > 0 && (
                             <p className="font-special-elite mt-6 text-center text-[10px] uppercase tracking-[0.25em]" style={{ color: "#8a6a30" }}>
                                 End of the ledger
                             </p>

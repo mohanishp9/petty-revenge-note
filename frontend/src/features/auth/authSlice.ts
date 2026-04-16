@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { loginAPI, logoutAPI, registerAPI } from "@/features/auth/authApi";
+import { loginAPI, logoutAPI, registerAPI, getCurrentUserAPI } from "@/features/auth/authApi";
 import { AuthState } from "./types";
 
 const SESSION_FLAG = "hasSession";
@@ -58,6 +58,20 @@ export const logoutUser = createAsyncThunk(
         } catch (err: any) {
             return thunkAPI.rejectWithValue(
                 err.response?.data?.message || "Logout failed"
+            );
+        }
+    }
+);
+
+export const getCurrentUser = createAsyncThunk(
+    "auth/getCurrentUser",
+    async (_, thunkAPI) => {
+        try {
+            const res = await getCurrentUserAPI();
+            return res.user;
+        } catch (err: any) {
+            return thunkAPI.rejectWithValue(
+                err.response?.data?.message || "Failed to fetch user"
             );
         }
     }
@@ -127,6 +141,19 @@ const authSlice = createSlice({
             .addCase(logoutUser.rejected, (state, action: any) => {
                 state.loading = false;
                 state.error = action.payload;
+            })
+            .addCase(getCurrentUser.pending, (state) => {
+                state.loading = true;
+            })
+            .addCase(getCurrentUser.fulfilled, (state, action) => {
+                state.loading = false;
+                state.user = action.payload;
+                state.token = "cookie-session";
+            })
+            .addCase(getCurrentUser.rejected, (state) => {
+                state.loading = false;
+                state.user = null;
+                state.token = null;
             });
     },
 });

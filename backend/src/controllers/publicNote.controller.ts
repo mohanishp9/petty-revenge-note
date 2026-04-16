@@ -84,7 +84,7 @@ const getNotesController = asyncHandler(async (req: Request, res: Response) => {
 // @desc Get top 5 notes by emoji
 // @route GET /top5/:emoji
 // @access Public
-const getTopFiveNotesByEmojiController = asyncHandler(async (req: Request, res: Response) => {
+const getTopNotesByEmojiController = asyncHandler(async (req: Request, res: Response) => {
     const { emoji } = emojiSchema.parse(req.query);
 
     const notes = await Reaction.aggregate([
@@ -96,7 +96,7 @@ const getTopFiveNotesByEmojiController = asyncHandler(async (req: Request, res: 
             }
         },
         { $sort: { count: -1 } },
-        { $limit: 5 },
+        // { $limit: 5 },
         {
             $lookup: {
                 from: "notes",
@@ -156,6 +156,6 @@ const getCommentsController = asyncHandler(async (req: Request, res: Response) =
 
 export {
     getNotesController, // done
-    getTopFiveNotesByEmojiController,
+    getTopNotesByEmojiController,
     getCommentsController, // done
 }
