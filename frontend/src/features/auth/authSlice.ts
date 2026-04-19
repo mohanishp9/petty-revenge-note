@@ -19,7 +19,7 @@ export const loginUser = createAsyncThunk(
         try {
             const res = await loginAPI(data);
             localStorage.setItem(SESSION_FLAG, "true");
-            localStorage.removeItem("token");
+            localStorage.setItem("token", res.token);
 
             return res;
         } catch (err) {
@@ -35,7 +35,7 @@ export const registerUser = createAsyncThunk(
         try {
             const res = await registerAPI(data);
             localStorage.setItem(SESSION_FLAG, "true");
-            localStorage.removeItem("token");
+            localStorage.setItem("token", res.token);
 
             return res;
         } catch (err) {
@@ -82,8 +82,8 @@ const authSlice = createSlice({
         // },
         setUserFromStorage(state) {
             if (typeof window !== "undefined") {
-                const hasSession = localStorage.getItem(SESSION_FLAG) === "true";
-                state.token = hasSession ? "cookie-session" : null;
+                const token = localStorage.getItem("token");
+                state.token = token;
             }
         },
         clearError(state) {
@@ -101,7 +101,7 @@ const authSlice = createSlice({
             .addCase(loginUser.fulfilled, (state, action) => {
                 state.loading = false;
                 state.user = action.payload.user;
-                state.token = "cookie-session";
+                state.token = action.payload.token;
             })
             .addCase(loginUser.rejected, (state, action) => {
                 state.loading = false;
@@ -116,7 +116,7 @@ const authSlice = createSlice({
             .addCase(registerUser.fulfilled, (state, action) => {
                 state.loading = false;
                 state.user = action.payload.user;
-                state.token = "cookie-session";
+                state.token = action.payload.token;
             })
             .addCase(registerUser.rejected, (state, action) => {
                 state.loading = false;

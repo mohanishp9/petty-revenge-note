@@ -8,6 +8,7 @@ export interface User {
 export interface AuthResponse {
     success: boolean;
     user: User;
+    token: string;
 }
 
 export interface AuthState {

@@ -58,6 +58,7 @@ const registerUserController = asyncHandler(async (req: Request, res: Response) 
                 username: user.username,
                 email: user.email,
             },
+            token: jwtToken,
         })
     } else {
         return res.status(400).json({
@@ -106,6 +107,7 @@ const loginUserController = asyncHandler(async (req: Request, res: Response) => 
                 username: user.username,
                 email: user.email,
             },
+            token: jwtToken,
         })
     } else {
         return res.status(401).json({
