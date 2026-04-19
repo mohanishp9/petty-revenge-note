@@ -94,13 +94,13 @@ const NoteCard = ({ isCommentsOpen, isLoggedIn, note, onCommentToggle }: NoteCar
             className="relative rounded-sm transition duration-300 ease-out"
             style={{
                 background: "linear-gradient(170deg, #f2e2b0 0%, #f5e9c8 40%, #ede0b0 100%)",
-                backgroundImage: `
-          repeating-linear-gradient(180deg, transparent, transparent 23px, rgba(100,60,10,0.1) 23px, rgba(100,60,10,0.1) 24px),
-          linear-gradient(170deg, #f2e2b0 0%, #f5e9c8 40%, #ede0b0 100%)
-        `,
+                backgroundImage: `...`,
                 padding: "1.5rem",
                 border: "1px solid rgba(120,80,20,0.2)",
-                minHeight: "29rem",
+                breakInside: "avoid",
+                marginBottom: "1.25rem",
+                display: "inline-block",
+                width: "100%",
             }}
         >
             <div className="absolute bottom-0 left-11 top-0 w-px" style={{ background: "rgba(180,40,30,0.3)" }} />
@@ -693,13 +693,12 @@ const HomePage = () => {
                         style={{ width: isCommentPanelOpen ? "100%" : "100%" }}
                     >
                         <div
-                            className="grid gap-5 transition-all duration-300 ease-out"
-                            style={{
-                                gridTemplateColumns: isCommentPanelOpen
-                                    ? "repeat(auto-fit, minmax(320px, 1fr))"
-                                    : "repeat(auto-fit, minmax(360px, 1fr))",
-                            }}
-                        >
+  className="transition-all duration-300 ease-out"
+  style={{
+    columns: isCommentPanelOpen ? "2 320px" : "4 300px",
+    gap: "1.25rem",
+  }}
+>
                             {displayedNotes.map((note) => (
                                 <NoteCard
                                     key={note._id}
