@@ -425,7 +425,7 @@ const Dashboard = () => {
         : notes;
     const activeNote = displayedNotes.find((note) => note._id === activeCommentNoteId) ?? null;
     const isCommentPanelOpen = Boolean(activeCommentNoteId);
-    const hasMore = count === NOTES_PER_PAGE || count === 0;
+    const hasMore = count === NOTES_PER_PAGE;
     const feedLoading = selectedEmoji ? topNotesByEmoji.loading : loading;
     const feedError = selectedEmoji ? topNotesByEmoji.error : error;
 
