@@ -1,9 +1,6 @@
-import Dashboard from "@/app/(public)/home/page";
+// app/page.tsx
+import HomePage from "./(public)/home/HomePage";
 
 export default function Home() {
-  return (
-    <>
-      <Dashboard />
-    </>
-  );
+  return <HomePage />;
 }
