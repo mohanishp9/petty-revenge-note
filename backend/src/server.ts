@@ -19,7 +19,7 @@ app.use(
     cors({
         origin: [
             "http://localhost:3000",
-            "petty-revenge-note.vercel.app"
+            "https://petty-revenge-note.vercel.app"
         ],
         credentials: true,
     })
