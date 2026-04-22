@@ -95,20 +95,45 @@ const publicNoteSlice = createSlice({
                 state.loading = false;
                 state.error = action.payload as string;
             })
+            .addCase(toggleLike.pending, (state, action) => {
+                const noteId = action.meta.arg.noteId;
+
+                const note = state.notes.find(n => n._id === noteId);
+                if (!note) return;
+
+                // store previous state (for rollback)
+                note._prevHasLiked = note.hasLiked;
+                note._prevLikes = note.likes;
+
+                // optimistic update
+                if (note.hasLiked) {
+                    note.likes = Math.max(0, note.likes - 1);
+                } else {
+                    note.likes += 1;
+                }
+
+                note.hasLiked = !note.hasLiked;
+            })
             .addCase(toggleLike.fulfilled, (state, action) => {
                 const { noteId, liked } = action.payload;
 
                 const note = state.notes.find(n => n._id === noteId);
+                if (!note) return;
 
-                if (note) {
-                    // only update if state actually changed
-                    if (note.hasLiked !== liked) {
-                        note.likes = liked
-                            ? note.likes + 1
-                            : Math.max(0, note.likes - 1);
-                    }
+                note.hasLiked = liked;
+            })
+            .addCase(toggleLike.rejected, (state, action) => {
+                const noteId = action.meta.arg.noteId;
 
-                    note.hasLiked = liked;
+                const note = state.notes.find(n => n._id === noteId);
+                if (!note) return;
+
+                if (note._prevHasLiked !== undefined) {
+                    note.hasLiked = note._prevHasLiked;
+                }
+
+                if (note._prevLikes !== undefined) {
+                    note.likes = note._prevLikes;
                 }
             })
             .addCase(addComment.fulfilled, (state, action) => {
@@ -118,46 +143,64 @@ const publicNoteSlice = createSlice({
                     note.commentsCount += 1;
                 }
             })
-            .addCase(reactToNote.fulfilled, (state, action) => {
-                const { noteId, reacted, emoji } = action.payload;
+            .addCase(reactToNote.pending, (state, action) => {
+                const { noteId, emoji } = action.meta.arg;
 
                 const note = state.notes.find(n => n._id === noteId);
                 if (!note) return;
 
+                // store previous state
+                note._prevReaction = note.userReaction;
+                note._prevReactionsCount = { ...note.reactionsCount };
+
                 const prevEmoji = note.userReaction;
 
-                // CASE 1: REMOVE REACTION
-                if (!reacted) {
-                    if (prevEmoji && note.reactionsCount[prevEmoji] !== undefined) {
+                // REMOVE reaction
+                if (prevEmoji === emoji) {
+                    if (note.reactionsCount[prevEmoji]) {
                         note.reactionsCount[prevEmoji] -= 1;
-
                         if (note.reactionsCount[prevEmoji] <= 0) {
                             delete note.reactionsCount[prevEmoji];
                         }
                     }
-
                     note.userReaction = null;
                     return;
                 }
 
-                // CASE 2: CHANGE REACTION
+                // CHANGE reaction
                 if (prevEmoji && prevEmoji !== emoji) {
-                    if (note.reactionsCount[prevEmoji] !== undefined) {
+                    if (note.reactionsCount[prevEmoji]) {
                         note.reactionsCount[prevEmoji] -= 1;
-
                         if (note.reactionsCount[prevEmoji] <= 0) {
                             delete note.reactionsCount[prevEmoji];
                         }
                     }
                 }
 
-                // CASE 3: ADD / NEW REACTION
-                if (emoji && prevEmoji !== emoji) {
+                // ADD reaction
+                if (emoji) {
                     note.reactionsCount[emoji] = (note.reactionsCount[emoji] || 0) + 1;
                 }
 
                 note.userReaction = emoji;
-            });
+            })
+            .addCase(reactToNote.fulfilled, (state, action) => {
+                const { noteId, emoji } = action.payload;
+
+                const note = state.notes.find(n => n._id === noteId);
+                if (!note) return;
+
+                note.userReaction = emoji;
+            })
+            .addCase(reactToNote.rejected, (state, action) => {
+                const { noteId } = action.meta.arg;
+
+                const note = state.notes.find(n => n._id === noteId);
+                if (!note) return;
+
+                note.userReaction = note._prevReaction;
+                note.reactionsCount = note._prevReactionsCount;
+            })
     }
 });
 

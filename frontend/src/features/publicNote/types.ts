@@ -21,6 +21,12 @@
 
         hasLiked: boolean;
         userReaction: string | null;
+
+        _prevHasLiked?: boolean;
+        _prevLikes?: number;
+
+        _prevReaction: string | null;
+        _prevReactionsCount: Record<string, number>;
     }
 
     export interface getAllNotesResponse {
