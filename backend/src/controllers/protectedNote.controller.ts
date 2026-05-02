@@ -5,7 +5,7 @@ import Reaction from "../models/Reaction.model";
 import Comment from "../models/Comment.model";
 import { createNoteSchema } from "../utils/note.validator";
 import { reactionSchema } from "../utils/reaction.validator";
-import { addCommentSchema } from "../utils/comment.validator";
+import { addCommentSchema, addReplySchema } from "../utils/comment.validator";
 import type { CreateNoteInput } from "../utils/note.validator";
 import type { Request, Response } from "express";
 import mongoose from "mongoose";
@@ -248,6 +248,67 @@ const addCommentController = asyncHandler(async (req: Request, res: Response) =>
     });
 });
 
+// @desc Reply to a Comment
+// @route POST /comments/:commentId/reply
+// @access Private
+const addReplyController = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user?._id;
+
+    if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const parsed = addReplySchema.safeParse({
+        commentId: req.params.commentId,
+        text: req.body.text,
+    });
+
+    if (!parsed.success) {
+        return res.status(400).json({
+            message: parsed.error.issues.map(i => i.message).join(", "),
+        });
+    }
+
+    const { commentId, text } = parsed.data;
+
+    const parentComment = await Comment.findById(commentId);
+
+    if (!parentComment) {
+        return res.status(404).json({ message: "Parent comment not found" });
+    }
+
+    // Enforce single-level nesting: parent must not have a parentCommentId
+    if (parentComment.parentCommentId) {
+        return res.status(400).json({
+            message: "Cannot reply to a reply. Only one level of nesting is allowed.",
+        });
+    }
+
+    const reply = await Comment.create({
+        noteId: parentComment.noteId,
+        user: userId,
+        text,
+        parentCommentId: new mongoose.Types.ObjectId(commentId),
+    });
+
+    // Increment parent comment's replies count
+    await Comment.updateOne(
+        { _id: commentId },
+        { $inc: { repliesCount: 1 } }
+    );
+
+    // Increment note's comments count
+    await Note.updateOne(
+        { _id: parentComment.noteId },
+        { $inc: { commentsCount: 1 } }
+    );
+
+    res.status(201).json({
+        success: true,
+        reply,
+    });
+});
+
 const getMyNotes = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?._id;
 
@@ -278,5 +339,6 @@ export {
     toggleLikeController, // done
     reactionController, // done
     addCommentController, // done
+    addReplyController, // done
     getMyNotes, // done
 }

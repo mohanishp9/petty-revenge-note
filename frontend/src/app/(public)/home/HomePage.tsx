@@ -3,9 +3,9 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
-import { ChevronDown, Heart, LoaderCircle, MessageCircle, Send, SmilePlus, X } from "lucide-react";
+import { ChevronDown, Heart, LoaderCircle, MessageCircle, Send, SmilePlus, X, Reply } from "lucide-react";
 import { useAppDispatch } from "@/app/hook/dispatch";
-import { addComment, getNoteComments, resetComments } from "@/features/comments/commentsSlice";
+import { addComment, addReply, getNoteComments, resetComments } from "@/features/comments/commentsSlice";
 import type { CommentType, CommentsState } from "@/features/comments/types";
 import { setUserFromStorage } from "@/features/auth/authSlice";
 import { getAllNotes, reactToNote, toggleLike } from "@/features/publicNote/publicNoteSlice";
@@ -257,6 +257,125 @@ type CommentsPanelProps = {
     onClose: () => void;
     onLoadMore: () => void;
     onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+    onReplySubmit: (commentId: string, text: string) => void;
+};
+
+const CommentItem = ({
+    comment,
+    isLoggedIn,
+    onReplyClick,
+    replyingTo,
+    replyInput,
+    onReplyInputChange,
+    onReplySubmit,
+}: {
+    comment: CommentType;
+    isLoggedIn: boolean;
+    onReplyClick: (commentId: string) => void;
+    replyingTo: string | null;
+    replyInput: string;
+    onReplyInputChange: (value: string) => void;
+    onReplySubmit: (commentId: string, text: string) => void;
+}) => {
+    const isReplying = replyingTo === comment._id;
+    const hasReplies = comment.replies && comment.replies.length > 0;
+
+    return (
+        <div className="space-y-2">
+            <article
+                className="rounded-sm border px-4 py-3"
+                style={{
+                    background: "rgba(255,249,236,0.76)",
+                    borderColor: "rgba(120,80,20,0.16)",
+                }}
+            >
+                <div className="mb-2 flex items-center justify-between gap-3">
+                    <p className="font-special-elite text-[10px] uppercase tracking-[0.2em]" style={{ color: "#7a5a22" }}>
+                        {formatCommentAuthor(comment)}
+                    </p>
+                    <div className="flex items-center gap-2">
+                        {hasReplies && (
+                            <span className="font-crimson text-xs italic" style={{ color: "#8a6030" }}>
+                                {comment.repliesCount} {comment.repliesCount === 1 ? "reply" : "replies"}
+                            </span>
+                        )}
+                        <p className="font-crimson text-xs italic" style={{ color: "#8a6030" }}>
+                            {new Date(comment.createdAt).toLocaleString()}
+                        </p>
+                    </div>
+                </div>
+                <p className="font-crimson text-[15px] leading-7" style={{ color: "#3a2008" }}>
+                    {comment.text}
+                </p>
+                {isLoggedIn && (
+                    <button
+                        type="button"
+                        onClick={() => onReplyClick(comment._id)}
+                        className="mt-2 flex items-center gap-1.5 font-special-elite text-[9px] uppercase tracking-[0.2em] transition"
+                        style={{ color: "#7a5a22", opacity: isReplying ? 0.6 : 1 }}
+                    >
+                        <Reply className="h-3 w-3" />
+                        {isReplying ? "Cancel" : "Reply"}
+                    </button>
+                )}
+            </article>
+
+            {isReplying && (
+                <div className="ml-4 rounded-sm border px-3 py-2" style={{ borderColor: "rgba(120,80,20,0.16)" }}>
+                    <textarea
+                        value={replyInput}
+                        onChange={(e) => onReplyInputChange(e.target.value)}
+                        placeholder="Write your reply..."
+                        rows={2}
+                        className="font-crimson w-full resize-none rounded-sm border bg-transparent px-2 py-2 text-[14px] leading-6 outline-none"
+                        style={{ borderColor: "rgba(120,80,20,0.22)", color: "#3a2008" }}
+                    />
+                    <button
+                        type="button"
+                        onClick={() => onReplySubmit(comment._id, replyInput)}
+                        disabled={!replyInput.trim()}
+                        className="font-special-elite mt-2 flex items-center gap-2 rounded-sm px-3 py-2 text-[9px] uppercase tracking-[0.2em] transition"
+                        style={{
+                            background: "rgba(122,90,34,0.12)",
+                            border: "1px solid rgba(120,80,20,0.22)",
+                            color: "#6a4515",
+                            opacity: !replyInput.trim() ? 0.6 : 1,
+                        }}
+                    >
+                        <Send className="h-3 w-3" />
+                        <span>Send Reply</span>
+                    </button>
+                </div>
+            )}
+
+            {hasReplies && (
+                <div className="ml-4 space-y-2 border-l-2 pl-3" style={{ borderColor: "rgba(120,80,20,0.12)" }}>
+                    {comment.replies!.map((reply) => (
+                        <article
+                            key={reply._id}
+                            className="rounded-sm border px-3 py-2"
+                            style={{
+                                background: "rgba(255,249,236,0.5)",
+                                borderColor: "rgba(120,80,20,0.12)",
+                            }}
+                        >
+                            <div className="mb-1.5 flex items-center justify-between gap-2">
+                                <p className="font-special-elite text-[9px] uppercase tracking-[0.18em]" style={{ color: "#7a5a22" }}>
+                                    {formatCommentAuthor(reply)}
+                                </p>
+                                <p className="font-crimson text-xs italic" style={{ color: "#8a6030" }}>
+                                    {new Date(reply.createdAt).toLocaleString()}
+                                </p>
+                            </div>
+                            <p className="font-crimson text-[14px] leading-6" style={{ color: "#3a2008" }}>
+                                {reply.text}
+                            </p>
+                        </article>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
 };
 
 const CommentsPanel = ({
@@ -268,10 +387,36 @@ const CommentsPanel = ({
     onClose,
     onLoadMore,
     onSubmit,
+    onReplySubmit,
 }: CommentsPanelProps) => {
+    const [replyingTo, setReplyingTo] = useState<string | null>(null);
+    const [replyInput, setReplyInput] = useState("");
+
     if (!activeNote) {
         return null;
     }
+
+    const handleReplyClick = (commentId: string) => {
+        if (replyingTo === commentId) {
+            setReplyingTo(null);
+            setReplyInput("");
+        } else {
+            setReplyingTo(commentId);
+            setReplyInput("");
+        }
+    };
+
+    const handleReplyInputChange = (value: string) => {
+        setReplyInput(value);
+    };
+
+    const handleReplySubmitInternal = (commentId: string, text: string) => {
+        if (text.trim()) {
+            onReplySubmit(commentId, text.trim());
+            setReplyingTo(null);
+            setReplyInput("");
+        }
+    };
 
     return (
         <aside
@@ -326,26 +471,16 @@ const CommentsPanel = ({
 
                     <div className="space-y-3">
                         {commentsState.comments.map((comment) => (
-                            <article
+                            <CommentItem
                                 key={comment._id}
-                                className="rounded-sm border px-4 py-3"
-                                style={{
-                                    background: "rgba(255,249,236,0.76)",
-                                    borderColor: "rgba(120,80,20,0.16)",
-                                }}
-                            >
-                                <div className="mb-2 flex items-center justify-between gap-3">
-                                    <p className="font-special-elite text-[10px] uppercase tracking-[0.2em]" style={{ color: "#7a5a22" }}>
-                                        {formatCommentAuthor(comment)}
-                                    </p>
-                                    <p className="font-crimson text-xs italic" style={{ color: "#8a6030" }}>
-                                        {new Date(comment.createdAt).toLocaleString()}
-                                    </p>
-                                </div>
-                                <p className="font-crimson text-[15px] leading-7" style={{ color: "#3a2008" }}>
-                                    {comment.text}
-                                </p>
-                            </article>
+                                comment={comment}
+                                isLoggedIn={isLoggedIn}
+                                onReplyClick={handleReplyClick}
+                                replyingTo={replyingTo}
+                                replyInput={replyInput}
+                                onReplyInputChange={handleReplyInputChange}
+                                onReplySubmit={handleReplySubmitInternal}
+                            />
                         ))}
                     </div>
 
@@ -573,6 +708,23 @@ const HomePage = () => {
         }
     };
 
+    const handleReplySubmit = async (commentId: string, text: string) => {
+        if (!text.trim()) {
+            return;
+        }
+
+        const action = await dispatch(
+            addReply({
+                commentId,
+                text: text.trim(),
+            })
+        );
+
+        if (addReply.fulfilled.match(action)) {
+            // Reply was added successfully
+        }
+    };
+
     return (
         <div className="min-h-screen" style={{ background: "linear-gradient(360deg, #f2e2b0 10%, #f5e9c8 30%, #ede0b0 90%)" }}>
             <div className="px-4 py-5 sm:px-6 lg:px-8" style={{ borderBottom: "1px solid rgba(180,130,40,0.15)" }}>
@@ -749,6 +901,7 @@ const HomePage = () => {
                                 onClose={handleCloseComments}
                                 onLoadMore={handleLoadMoreComments}
                                 onSubmit={handleCommentSubmit}
+                                onReplySubmit={handleReplySubmit}
                             />
                         )}
                     </div>

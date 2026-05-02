@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { getAllCommentsAPI, addCommentAPI } from "@/features/comments/commentsApi";
-import { CommentsState, CommentsParams, AddCommentParams } from "@/features/comments/types";
+import { getAllCommentsAPI, addCommentAPI, addReplyAPI } from "@/features/comments/commentsApi";
+import { CommentsState, CommentsParams, AddCommentParams, AddReplyParams } from "@/features/comments/types";
 import { getErrorMessage } from "@/utils/getErrorMessage";
 
 export const initialState: CommentsState = {
@@ -38,6 +38,19 @@ export const addComment = createAsyncThunk(
             const res = await addCommentAPI(params);
 
             return res.comment;
+        } catch (err) {
+            return thunkAPI.rejectWithValue(getErrorMessage(err));
+        }
+    }
+);
+
+export const addReply = createAsyncThunk(
+    "comment/addReply",
+    async (params: AddReplyParams, thunkAPI) => {
+        try {
+            const res = await addReplyAPI(params);
+
+            return res.reply;
         } catch (err) {
             return thunkAPI.rejectWithValue(getErrorMessage(err));
         }
@@ -113,6 +126,22 @@ const commentsSlice = createSlice({
 
                 if (state.comments.length > state.limit) {
                     state.comments.pop();
+                }
+            })
+            .addCase(addReply.fulfilled, (state, action) => {
+                const newReply = action.payload;
+
+                // Find the parent comment and add the reply
+                const parentComment = state.comments.find(
+                    (c) => c._id === newReply.parentCommentId
+                );
+
+                if (parentComment) {
+                    if (!parentComment.replies) {
+                        parentComment.replies = [];
+                    }
+                    parentComment.replies.push(newReply);
+                    parentComment.repliesCount = (parentComment.repliesCount || 0) + 1;
                 }
             })
     },
