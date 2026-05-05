@@ -1,0 +1,302 @@
+{
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\server.ts": {
+    "mtime": 1777565437.310574,
+    "hash": "82c7262a2bb7ffa8bd751820e4ca6044"
+  },
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\config\\db.ts": {
+    "mtime": 1773836497.505238,
+    "hash": "d0713c9fd86ceff421a6e4091d54db53"
+  },
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\controllers\\auth.controller.ts": {
+    "mtime": 1777565437.309924,
+    "hash": "84d1a0fe458505aa5b7b30f569c25258"
+  },
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\controllers\\protectedNote.controller.ts": {
+    "mtime": 1777993107.7340899,
+    "hash": "bd1edab42c303c85b937c023cc4cbcf9"
+  },
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\controllers\\publicNote.controller.ts": {
+    "mtime": 1777993107.7340899,
+    "hash": "c477b7d56964f581d15b9198f18dfcf6"
+  },
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\middleware\\auth.middleware.ts": {
+    "mtime": 1777993107.7340899,
+    "hash": "eba31d4a7edb5842f3ffdb9d8bd27fcb"
+  },
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\middleware\\optionalAuth.middleware.ts": {
+    "mtime": 1776591199.4308002,
+    "hash": "27c0fdc7b61d6a58f4055610834c0e78"
+  },
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\middleware\\rateLimit.middleware.ts": {
+    "mtime": 1774370280.7222376,
+    "hash": "09bb7314759d5842a98e29016033fd9e"
+  },
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\models\\Comment.model.ts": {
+    "mtime": 1777993107.7350895,
+    "hash": "2992227b9e8097ea29ae5eefb644577e"
+  },
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\models\\Like.model.ts": {
+    "mtime": 1776591199.4311967,
+    "hash": "1c80bcf55d7a4a9bd908c26d93da4521"
+  },
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\models\\Note.model.ts": {
+    "mtime": 1776591199.4311967,
+    "hash": "43802d05d968b906c9ba493736cb9ab4"
+  },
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\models\\Reaction.model.ts": {
+    "mtime": 1776591199.4321995,
+    "hash": "ee10efbc719adf7f3c0221ee8149f55d"
+  },
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\models\\User.model.ts": {
+    "mtime": 1776591199.4338274,
+    "hash": "0d60195f3247fc3e23aa30aadd66aa8b"
+  },
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\routes\\auth.routes.ts": {
+    "mtime": 1776591199.4338274,
+    "hash": "5f10eae423a12d533cc8b9552a588912"
+  },
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\routes\\protectedNote.route.ts": {
+    "mtime": 1777993107.7350895,
+    "hash": "2b0faa70d59e2b55da6f2c32a7dac5fc"
+  },
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\routes\\publicNote.route.ts": {
+    "mtime": 1776591199.43483,
+    "hash": "fff5872b45b01c5c912c9387933d2a38"
+  },
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\types\\comment.types.ts": {
+    "mtime": 1777993107.7360897,
+    "hash": "c5d717fe9bf12096688b6578b25141c4"
+  },
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\types\\express.d.ts": {
+    "mtime": 1776591199.4358299,
+    "hash": "9c8c539ef817586ed75e1b372b9ddf3f"
+  },
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\types\\like.types.ts": {
+    "mtime": 1774365354.3930364,
+    "hash": "8b05397d4b8db68f356f931147227c38"
+  },
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\types\\note.types.ts": {
+    "mtime": 1775067826.7084398,
+    "hash": "29f68fc5be2f1c9a0a539b3c895637a4"
+  },
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\types\\reaction.types.ts": {
+    "mtime": 1774363430.7197087,
+    "hash": "f2d720762e8774f1d6137ebf326fc4da"
+  },
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\types\\user.types.ts": {
+    "mtime": 1774296200.7179003,
+    "hash": "4dcf846ae6167c1f8297012b38c775f0"
+  },
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\utils\\AppError.ts": {
+    "mtime": 1775379270.9999218,
+    "hash": "492e55e7df82442654e9c471348ea0e3"
+  },
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\utils\\asyncHandler.ts": {
+    "mtime": 1773938174.1692474,
+    "hash": "226373cd496d1a619be280acbd4cf9ff"
+  },
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\utils\\comment.validator.ts": {
+    "mtime": 1777993107.7360897,
+    "hash": "a84ad7e9b97fb1c3901f0084364897ad"
+  },
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\utils\\jwt.ts": {
+    "mtime": 1775060245.2764678,
+    "hash": "f5eb64fc4eb4fd0bf32b06828da18d60"
+  },
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\utils\\note.validator.ts": {
+    "mtime": 1775068909.842679,
+    "hash": "fe3f08a6884d8c7806ad369a0fc03793"
+  },
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\utils\\reaction.validator.ts": {
+    "mtime": 1774981798.4881794,
+    "hash": "c3d18094c79606a941e0e4ca999c81cd"
+  },
+  "C:\\Projects\\petty-revenge-notes\\backend\\src\\utils\\validation.ts": {
+    "mtime": 1774027655.822613,
+    "hash": "804138793033227d8d6ca8fd519426c8"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\eslint.config.mjs": {
+    "mtime": 1773829808.1468961,
+    "hash": "dfa1f5f6a7037bf39dc510f30b180002"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\next-env.d.ts": {
+    "mtime": 1777571914.9773347,
+    "hash": "d0f8375ae1199dc7acd3977fc33b78b8"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\next.config.ts": {
+    "mtime": 1777565437.3110826,
+    "hash": "025f4fcb6024b3524d19492cf7ce54a2"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\postcss.config.mjs": {
+    "mtime": 1773829808.1568964,
+    "hash": "239f3ebf717465dc636818a1a619398d"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\app\\layout.tsx": {
+    "mtime": 1776591199.4388547,
+    "hash": "de63838810b4364087dc6e0e648d3a17"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\app\\page.tsx": {
+    "mtime": 1777565437.3126924,
+    "hash": "ffe4fb6532fcfc0191a2789ffeff6ba5"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\app\\providers.tsx": {
+    "mtime": 1775221591.6196096,
+    "hash": "8a5b67870b3800b71e0a7b813854022f"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\app\\(public)\\home\\HomePage.tsx": {
+    "mtime": 1777993107.7370894,
+    "hash": "2cd269d2bb081237db91e067aa538e04"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\app\\(public)\\home\\page.tsx": {
+    "mtime": 1777565437.312181,
+    "hash": "c0c6c4e1c86cde23e4127f296697ddc6"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\app\\(public)\\login\\page.tsx": {
+    "mtime": 1776591199.4373422,
+    "hash": "bfc09a34abc4b23467e9cfaefe79f2d8"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\app\\(public)\\register\\page.tsx": {
+    "mtime": 1776591199.4388547,
+    "hash": "4a9c45c62741d12eefc8d1899c76ad10"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\app\\hook\\dispatch.ts": {
+    "mtime": 1775653994.2571087,
+    "hash": "d5d0849a3356b26e61eea6b51b2748fe"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\app\\profile\\page.tsx": {
+    "mtime": 1776591199.4405205,
+    "hash": "5ddd72e88cc8f911e3440d534a81ffd5"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\components\\Navbar.tsx": {
+    "mtime": 1776591199.4420476,
+    "hash": "28469df04630821b475c4448ff6f0a16"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\features\\auth\\authApi.ts": {
+    "mtime": 1776591199.4430525,
+    "hash": "6fc504bf92215debb13fc4f4c8429547"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\features\\auth\\authSlice.ts": {
+    "mtime": 1777565437.3132057,
+    "hash": "7d05b3bc4ad1ee4fb187086c50a80217"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\features\\auth\\types.ts": {
+    "mtime": 1777565437.3132057,
+    "hash": "89315c4e758e8dc6e2870c8032930c4e"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\features\\comments\\commentsApi.ts": {
+    "mtime": 1777993107.7380893,
+    "hash": "b43f9e1711842cb3372095396ee9ddef"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\features\\comments\\commentsSlice.ts": {
+    "mtime": 1777993107.7380893,
+    "hash": "54926fa462cb1b8ae2171b4f7da887a7"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\features\\comments\\types.ts": {
+    "mtime": 1777993107.73909,
+    "hash": "cd3f589b3217d35802c59a43bca65a1b"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\features\\createNote\\createNoteApi.ts": {
+    "mtime": 1776262887.2949462,
+    "hash": "c95131afc43695697530102ca6a7cdd1"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\features\\createNote\\createNoteSlice.ts": {
+    "mtime": 1776591199.4445605,
+    "hash": "bf69b8d7c332f85c37c90fd654786abb"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\features\\createNote\\types.ts": {
+    "mtime": 1776262887.2949462,
+    "hash": "0ef6b44da937615ca4faa743d4998149"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\features\\getMyNotes\\getMyNotesApi.ts": {
+    "mtime": 1776262887.2949462,
+    "hash": "a9c6fbe4f88c5152118e961b0ffed18e"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\features\\getMyNotes\\getMyNotesSlice.ts": {
+    "mtime": 1776591199.445565,
+    "hash": "db4310ce5a778460ef62625965da1db2"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\features\\getMyNotes\\types.ts": {
+    "mtime": 1776262887.2969534,
+    "hash": "2aabb9bf8f1502fe22b57d27d7c01c9e"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\features\\publicNote\\publicNoteApi.ts": {
+    "mtime": 1775401738.429478,
+    "hash": "ac7cb18731d218dd5fb54ac85550eeea"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\features\\publicNote\\publicNoteSlice.ts": {
+    "mtime": 1777565437.3137152,
+    "hash": "65907264bd4ccc37b334afa9532e5175"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\features\\publicNote\\types.ts": {
+    "mtime": 1777565437.3143036,
+    "hash": "1602656b208dba55c2e9e81e96d67ba5"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\features\\reaction\\rectionApi.ts": {
+    "mtime": 1775835703.2211235,
+    "hash": "7c084e1ea71a51ae193d4e13aae785fc"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\features\\reaction\\types.ts": {
+    "mtime": 1775838823.7756941,
+    "hash": "ba2fc6aa25129326a55a5d59df936246"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\features\\toggleLike\\toggleLikeApi.ts": {
+    "mtime": 1775668497.7200325,
+    "hash": "776dd4cc98ab497a84ffb10974daa70c"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\features\\toggleLike\\types.ts": {
+    "mtime": 1775829480.5628743,
+    "hash": "83ed6696fdcd5bfce1a047267e7ee8ba"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\features\\topNotesByEmoji\\topNotesByEmojiApi.ts": {
+    "mtime": 1776591199.4470737,
+    "hash": "fd8daf6f2d58c7fd7a469c6839c4a8cb"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\features\\topNotesByEmoji\\topNotesByEmojiSlice.ts": {
+    "mtime": 1776591199.4480715,
+    "hash": "94a6ce92e30f99c0f95795535f3a4dcc"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\features\\topNotesByEmoji\\types.ts": {
+    "mtime": 1776591199.4490714,
+    "hash": "0a1b437a1244745d4f2e728c8e74d987"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\lib\\axios.ts": {
+    "mtime": 1775671322.7866764,
+    "hash": "05196b050bfc39caeeb2890fbafbcbcf"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\store\\store.ts": {
+    "mtime": 1776591199.450071,
+    "hash": "544c8e4d8abe0ff4c9546be6c2077678"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\src\\utils\\getErrorMessage.ts": {
+    "mtime": 1776591199.450071,
+    "hash": "d2eb394bc88277e55b239d90f9e0ce6d"
+  },
+  "C:\\Projects\\petty-revenge-notes\\docker-compose.yml": {
+    "mtime": 1776596167.6367807,
+    "hash": "24e02613717ac4ef5a57bf8ea9af967c"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\README.md": {
+    "mtime": 1773829808.1378958,
+    "hash": "f15aaa42d5d299d091b1171097ea56ad"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\public\\file.svg": {
+    "mtime": 1773829808.158896,
+    "hash": "d09f95206c3fa0bb9bd9fefabfd0ea71"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\public\\globe.svg": {
+    "mtime": 1773829808.1628964,
+    "hash": "2aaafa6a49b6563925fe440891e32717"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\public\\next.svg": {
+    "mtime": 1773829808.1679,
+    "hash": "8e061864f388b47f33a1c3780831193e"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\public\\vercel.svg": {
+    "mtime": 1773829808.172901,
+    "hash": "c0af2f507b369b085b35ef4bbe3bcf1e"
+  },
+  "C:\\Projects\\petty-revenge-notes\\frontend\\public\\window.svg": {
+    "mtime": 1773829808.1769,
+    "hash": "a2760511c65806022ad20adf74370ff3"
+  }
+}
