@@ -82,15 +82,10 @@ Thumbs.db
 .tmp/
 .cache/
 
-# ----------------------------------
-# Claude Code / MCP / AI tooling
-# ----------------------------------
+
 .claude/
 .agents/
 skills-lock.json
 
-# ----------------------------------
-# Optional (if these ever appear)
-# ----------------------------------
 .mcp/
 *.mcp.json
