@@ -137,20 +137,48 @@ const getCommentsController = asyncHandler(async (req: Request, res: Response) =
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
 
-    const comments = await Comment.find({ noteId })
+    // Get top-level comments only (no parentCommentId)
+    const comments = await Comment.find({ noteId, parentCommentId: null })
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
         .lean();
 
-    const total = await Comment.countDocuments({ noteId });
+    // Get replies for each comment
+    const commentIds = comments.map(c => c._id);
+    const replies = await Comment.find({
+        noteId,
+        parentCommentId: { $in: commentIds }
+    })
+        .sort({ createdAt: 1 })
+        .lean();
+
+    // Group replies by parent comment
+    const repliesMap = new Map<string, any[]>();
+    for (const reply of replies) {
+        const parentId = reply.parentCommentId?.toString();
+        if (parentId) {
+            if (!repliesMap.has(parentId)) {
+                repliesMap.set(parentId, []);
+            }
+            repliesMap.get(parentId)!.push(reply);
+        }
+    }
+
+    // Attach replies to comments
+    const commentsWithReplies = comments.map(comment => ({
+        ...comment,
+        replies: repliesMap.get(comment._id.toString()) || [],
+    }));
+
+    const total = await Comment.countDocuments({ noteId, parentCommentId: null });
 
     res.status(200).json({
         success: true,
         count: comments.length,
         total,
         hasMore: page * limit < total,
-        comments,
+        comments: commentsWithReplies,
     });
 });
 

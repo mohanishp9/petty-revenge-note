@@ -3,13 +3,17 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
-import { FileText, Mail, MessageCircle, NotebookPen, Plus, UserRound, X } from "lucide-react";
+import { FileText, Mail, MessageCircle, NotebookPen, Plus, Trash2, UserRound, X } from "lucide-react";
 import { useAppDispatch } from "@/app/hook/dispatch";
 import { getCurrentUser, setUserFromStorage } from "@/features/auth/authSlice";
 import { getNoteComments, resetComments } from "@/features/comments/commentsSlice";
 import type { CommentType } from "@/features/comments/types";
 import { createNote, resetCreateNote } from "@/features/createNote/createNoteSlice";
-import { getMyNotes, resetMyNotes } from "@/features/getMyNotes/getMyNotesSlice";
+import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
+import { deleteNote, resetDeleteNote } from "@/features/deleteNote/deleteNoteSlice";
+// import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
+// import { deleteNote, resetDeleteNote } from "@/features/deleteNote/deleteNoteSlice";
+import { getMyNotes, resetMyNotes,removeNote } from "@/features/getMyNotes/getMyNotesSlice";
 import type { Note } from "@/features/publicNote/types";
 import type { RootState } from "@/store/store";
 
@@ -30,7 +34,7 @@ const paperCard = {
     border: "1px solid rgba(120,80,20,0.2)",
 };
 
-function NoteCard({ note, active, onToggle }: { note: Note; active: boolean; onToggle: (id: string) => void }) {
+function NoteCard({ note, active, onToggle, onDelete }: { note: Note; active: boolean; onToggle: (id: string) => void; onDelete: (note: Note) => void; }) {
     return (
         <article className="relative rounded-sm p-6 transition duration-300 ease-out" style={{ ...paperCard, minHeight: "26rem" }}>
             <div className="absolute bottom-0 left-11 top-0 w-px" style={{ background: "rgba(180,40,30,0.3)" }} />
@@ -57,6 +61,15 @@ function NoteCard({ note, active, onToggle }: { note: Note; active: boolean; onT
                 </button>
                 <span className="font-special-elite rounded-sm px-3 py-2 text-[10px] uppercase tracking-[0.22em]" style={{ border: "1px solid rgba(120,80,20,0.18)", color: "#7a5a22" }}>{reactionTotal(note.reactionsCount)} reactions</span>
                 {note.userReaction && <span className="font-special-elite rounded-sm px-3 py-2 text-[10px] uppercase tracking-[0.22em]" style={{ border: "1px solid rgba(160,120,20,0.28)", color: "#7a5010", background: "rgba(160,120,20,0.08)" }}>Reacted {note.userReaction}</span>}
+                <button
+                    type="button"
+                    onClick={() => onDelete(note)}
+                    className="font-special-elite flex items-center gap-2 rounded-sm px-3 py-2 text-[10px] uppercase tracking-[0.22em]"
+                    style={{ border: "1px solid rgba(160,40,20,0.28)", color: "#8a2510", background: "rgba(160,40,20,0.08)", cursor: "pointer" }}
+                >
+                    <Trash2 className="h-4 w-4" />
+                    <span>Delete</span>
+                </button>
             </div>
         </article>
     );
@@ -114,14 +127,19 @@ export default function ProfilePage() {
     const { user, token, loading: authLoading } = useSelector((state: RootState) => state.auth);
     const { notes, total, loading: notesLoading, error: notesError, page } = useSelector((state: RootState) => state.getMyNote);
     const { comments, loading: commentsLoading, hasMore: commentsHasMore, page: commentsPage } = useSelector((state: RootState) => state.comments);
-    const { loading: createNoteLoading, error: createNoteError } = useSelector((state: RootState) => state.createNote);
-
+    const {
+    loading: createNoteLoading,
+    error: createNoteError,
+} = useSelector((state: RootState) => state.createNote);
+    const { loading: deleteNoteLoading } = useSelector((state: RootState) => state.deleteNote);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [showUsername, setShowUsername] = useState(true);
     const [subject, setSubject] = useState("");
     const [content, setContent] = useState("");
     const [categoryEmoji, setCategoryEmoji] = useState<(typeof CATEGORY_OPTIONS)[number]>("😂");
     const [activeCommentNoteId, setActiveCommentNoteId] = useState<string | null>(null);
+    const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
     const activeNote = useMemo(() => notes.find((note) => note._id === activeCommentNoteId) ?? null, [activeCommentNoteId, notes]);
     const isCommentPanelOpen = Boolean(activeCommentNoteId);
@@ -174,6 +192,31 @@ export default function ProfilePage() {
             return;
         }
         setActiveCommentNoteId(noteId);
+    };
+
+    const handleDeleteClick = (note: Note) => {
+        setNoteToDelete(note);
+        setIsDeleteModalOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!noteToDelete) return;
+
+        setIsDeleteModalOpen(false);
+        setNoteToDelete(null);
+
+        // Optimistically remove the note from the UI
+        if (noteToDelete) {
+            dispatch(removeNote(noteToDelete._id));
+        }
+
+        // Dispatch the delete action
+        const result = await dispatch(deleteNote(noteToDelete._id));
+
+        if (deleteNote.rejected.match(result)) {
+            // If the delete failed, show an error and potentially re-add the note
+            console.error("Failed to delete note:", result.payload);
+        }
     };
 
     return (
@@ -235,7 +278,7 @@ export default function ProfilePage() {
                     <div className="flex flex-col gap-6 xl:flex-row">
                         <section className="min-w-0 transition-all duration-300 ease-out" style={{ width: "100%" }}>
                             <div className="grid gap-5 transition-all duration-300 ease-out" style={{ gridTemplateColumns: isCommentPanelOpen ? "repeat(auto-fit, minmax(320px, 1fr))" : "repeat(auto-fit, minmax(360px, 1fr))" }}>
-                                {notes.map((note) => <NoteCard key={note._id} note={note} active={activeCommentNoteId === note._id} onToggle={handleToggleComments} />)}
+                                {notes.map((note) => <NoteCard key={note._id} note={note} active={activeCommentNoteId === note._id} onToggle={handleToggleComments} onDelete={handleDeleteClick} />)}
                             </div>
                             {notesLoading && notes.length > 0 && <p className="font-crimson mt-6 text-center italic" style={{ color: "#7a5a22" }}>Loading more notes...</p>}
                             {notes.length < total && <div className="mt-6 flex justify-center"><button type="button" onClick={() => !notesLoading && dispatch(getMyNotes({ page: page + 1, limit: NOTES_PER_PAGE }))} disabled={notesLoading} className="font-special-elite rounded-sm px-4 py-3 text-[10px] uppercase tracking-[0.22em]" style={{ background: "rgba(122,90,34,0.12)", border: "1px solid rgba(120,80,20,0.22)", color: "#6a4515", opacity: notesLoading ? 0.7 : 1 }}>{notesLoading ? "Loading..." : "Load More Notes"}</button></div>}
@@ -313,6 +356,18 @@ export default function ProfilePage() {
                         </div>
                     </div>
                 </div>
+            )}
+            {isDeleteModalOpen && (
+                <DeleteConfirmationModal
+                    isOpen={isDeleteModalOpen}
+                    onClose={() => {
+                        setIsDeleteModalOpen(false);
+                        setNoteToDelete(null);
+                    }}
+                    onConfirm={handleConfirmDelete}
+                    noteSubject={noteToDelete?.subject}
+                    isDeleting={deleteNoteLoading}
+                />
             )}
         </div>
     );

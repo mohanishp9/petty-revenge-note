@@ -5,6 +5,8 @@ export interface CommentTypes {
     noteId: Types.ObjectId;
     user: Types.ObjectId;
     text: string;
+    parentCommentId?: Types.ObjectId | null;
+    repliesCount?: number;
     createdAt?: Date;
     updatedAt?: Date;
 }

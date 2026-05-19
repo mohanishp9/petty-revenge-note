@@ -41,6 +41,10 @@ const getMyNotesSlice = createSlice({
             state.total = 0;
             state.error = null;
         },
+        removeNote(state, action) {
+            const noteId = action.payload;
+            state.notes = state.notes.filter(note => note._id !== noteId);
+        },
     },
     extraReducers: (builder) => {
         builder
@@ -78,5 +82,5 @@ const getMyNotesSlice = createSlice({
     },
 });
 
-export const { resetMyNotes } = getMyNotesSlice.actions;
+export const { resetMyNotes, removeNote } = getMyNotesSlice.actions;
 export default getMyNotesSlice.reducer;

@@ -20,6 +20,16 @@ const commentSchema = new Schema<CommentTypes>(
             trim: true,
             maxlength: 300,
         },
+        parentCommentId: {
+            type: Schema.Types.ObjectId,
+            ref: "Comment",
+            default: null,
+            index: true,
+        },
+        repliesCount: {
+            type: Number,
+            default: 0,
+        },
     },
     {
         timestamps: true,
@@ -28,6 +38,10 @@ const commentSchema = new Schema<CommentTypes>(
 
 // for fast pagination
 commentSchema.index({ noteId: 1, createdAt: -1 });
+// for fetching replies of a comment
+commentSchema.index({ parentCommentId: 1, createdAt: -1 });
+// compound index for note-specific replies
+commentSchema.index({ noteId: 1, parentCommentId: 1, createdAt: -1 });
 
 const Comment = mongoose.model<CommentTypes>("Comment", commentSchema);
 

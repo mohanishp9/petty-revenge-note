@@ -23,6 +23,10 @@ const protect = asyncHandler(async (req: Request, res: Response, next: NextFunct
 
     try {
         decoded = verifyToken(token) as JWTPayload;
+        if (!decoded || !decoded.id) {
+            res.status(401);
+            throw new Error("Invalid token");
+        }
     } catch (error) {
         res.status(401);
         throw new Error("Invalid token");

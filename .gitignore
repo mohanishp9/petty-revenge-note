@@ -76,21 +76,20 @@ Thumbs.db
 .vercel
 
 # ----------------------------------
-# Misc
+# Graphify outputs
 # ----------------------------------
-*.pem
-.tmp/
-.cache/
+graphify-out/
 
 # ----------------------------------
-# Claude Code / MCP / AI tooling
+# AI tooling / Claude / MCP
 # ----------------------------------
 .claude/
 .agents/
 skills-lock.json
-
-# ----------------------------------
-# Optional (if these ever appear)
-# ----------------------------------
 .mcp/
 *.mcp.json
+
+# ----------------------------------
+# Ignore all markdown files
+# ----------------------------------
+*.md

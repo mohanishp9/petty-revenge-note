@@ -5,7 +5,7 @@ import Reaction from "../models/Reaction.model";
 import Comment from "../models/Comment.model";
 import { createNoteSchema } from "../utils/note.validator";
 import { reactionSchema } from "../utils/reaction.validator";
-import { addCommentSchema } from "../utils/comment.validator";
+import { addCommentSchema, addReplySchema } from "../utils/comment.validator";
 import type { CreateNoteInput } from "../utils/note.validator";
 import type { Request, Response } from "express";
 import mongoose from "mongoose";
@@ -248,6 +248,67 @@ const addCommentController = asyncHandler(async (req: Request, res: Response) =>
     });
 });
 
+// @desc Reply to a Comment
+// @route POST /comments/:commentId/reply
+// @access Private
+const addReplyController = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user?._id;
+
+    if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const parsed = addReplySchema.safeParse({
+        commentId: req.params.commentId,
+        text: req.body.text,
+    });
+
+    if (!parsed.success) {
+        return res.status(400).json({
+            message: parsed.error.issues.map(i => i.message).join(", "),
+        });
+    }
+
+    const { commentId, text } = parsed.data;
+
+    const parentComment = await Comment.findById(commentId);
+
+    if (!parentComment) {
+        return res.status(404).json({ message: "Parent comment not found" });
+    }
+
+    // Enforce single-level nesting: parent must not have a parentCommentId
+    if (parentComment.parentCommentId) {
+        return res.status(400).json({
+            message: "Cannot reply to a reply. Only one level of nesting is allowed.",
+        });
+    }
+
+    const reply = await Comment.create({
+        noteId: parentComment.noteId,
+        user: userId,
+        text,
+        parentCommentId: new mongoose.Types.ObjectId(commentId),
+    });
+
+    // Increment parent comment's replies count
+    await Comment.updateOne(
+        { _id: commentId },
+        { $inc: { repliesCount: 1 } }
+    );
+
+    // Increment note's comments count
+    await Note.updateOne(
+        { _id: parentComment.noteId },
+        { $inc: { commentsCount: 1 } }
+    );
+
+    res.status(201).json({
+        success: true,
+        reply,
+    });
+});
+
 const getMyNotes = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?._id;
 
@@ -273,10 +334,67 @@ const getMyNotes = asyncHandler(async (req: Request, res: Response) => {
     });
 });
 
+// @desc Delete Note
+// @route DELETE /:id
+// @access Private
+const deleteNoteController = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user?._id;
+
+    if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const noteIdParam = req.params.id;
+
+    if (typeof noteIdParam !== "string" || !mongoose.Types.ObjectId.isValid(noteIdParam)) {
+        return res.status(400).json({ message: "Invalid note id" });
+    }
+
+    const noteId = new mongoose.Types.ObjectId(noteIdParam);
+
+    // Check if note exists and belongs to user
+    const note = await Note.findOne({ _id: noteId, user: userId });
+
+    if (!note) {
+        return res.status(404).json({ message: "Note not found or unauthorized" });
+    }
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        // Delete the note
+        await Note.deleteOne({ _id: noteId }, { session });
+
+        // Delete related likes
+        await Like.deleteMany({ noteId: noteId }, { session });
+
+        // Delete related reactions
+        await Reaction.deleteMany({ note: noteId }, { session });
+
+        // Delete related comments (including nested replies since they all have noteId reference)
+        await Comment.deleteMany({ noteId: noteId }, { session });
+
+        await session.commitTransaction();
+
+        return res.status(200).json({
+            success: true,
+            message: "Note deleted successfully"
+        });
+    } catch (err) {
+        await session.abortTransaction();
+        throw err;
+    } finally {
+        await session.endSession();
+    }
+});
+
 export {
     createNoteController, // done
     toggleLikeController, // done
     reactionController, // done
     addCommentController, // done
+    addReplyController, // done
     getMyNotes, // done
+    deleteNoteController, // implemented
 }
