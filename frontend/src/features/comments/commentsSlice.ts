@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { getAllCommentsAPI, addCommentAPI, addReplyAPI } from "@/features/comments/commentsApi";
-import { CommentsState, CommentsParams, AddCommentParams, AddReplyParams } from "@/features/comments/types";
+import { getAllCommentsAPI, addCommentAPI, addReplyAPI, editCommentAPI, deleteCommentAPI } from "@/features/comments/commentsApi";
+import { CommentsState, CommentsParams, AddCommentParams, AddReplyParams, EditCommentParams, DeleteCommentParams } from "@/features/comments/types";
 import { getErrorMessage } from "@/utils/getErrorMessage";
 
 export const initialState: CommentsState = {
@@ -51,6 +51,56 @@ export const addReply = createAsyncThunk(
             const res = await addReplyAPI(params);
 
             return res.reply;
+        } catch (err) {
+            return thunkAPI.rejectWithValue(getErrorMessage(err));
+        }
+    }
+);
+
+export const editComment = createAsyncThunk(
+    "comment/editComment",
+    async (params: EditCommentParams, thunkAPI) => {
+        try {
+            const res = await editCommentAPI(params);
+            return res.comment;
+        } catch (err) {
+            return thunkAPI.rejectWithValue(getErrorMessage(err));
+        }
+    }
+);
+
+export const deleteComment = createAsyncThunk(
+    "comment/deleteComment",
+    async (params: DeleteCommentParams, thunkAPI) => {
+        try {
+            // try to find the comment and compute removed count before deleting
+            const state: any = thunkAPI.getState();
+            let noteId: string | undefined = undefined;
+            let removedCount = 1;
+
+            const comments: any[] = state.comments?.comments || [];
+
+            const topIndex = comments.findIndex((c) => c._id === params.commentId);
+            if (topIndex !== -1) {
+                const comment = comments[topIndex];
+                noteId = comment.noteId;
+                removedCount = 1 + (comment.replies?.length || 0);
+            } else {
+                for (const c of comments) {
+                    if (c.replies) {
+                        const replyIndex = c.replies.findIndex((r: any) => r._id === params.commentId);
+                        if (replyIndex !== -1) {
+                            noteId = c.noteId;
+                            removedCount = 1;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            await deleteCommentAPI(params);
+
+            return { commentId: params.commentId, noteId, removedCount };
         } catch (err) {
             return thunkAPI.rejectWithValue(getErrorMessage(err));
         }
@@ -142,6 +192,58 @@ const commentsSlice = createSlice({
                     }
                     parentComment.replies.push(newReply);
                     parentComment.repliesCount = (parentComment.repliesCount || 0) + 1;
+                }
+            })
+            .addCase(editComment.fulfilled, (state, action) => {
+                const updatedComment = action.payload;
+
+                if (updatedComment.parentCommentId) {
+                    // It's a reply
+                    const parentComment = state.comments.find(c => c._id === updatedComment.parentCommentId);
+                    if (parentComment && parentComment.replies) {
+                        const index = parentComment.replies.findIndex(r => r._id === updatedComment._id);
+                        if (index !== -1) {
+                            parentComment.replies[index] = updatedComment;
+                        }
+                    }
+                } else {
+                    // It's a top-level comment
+                    const index = state.comments.findIndex(c => c._id === updatedComment._id);
+                    if (index !== -1) {
+                        state.comments[index] = {
+                            ...state.comments[index],
+                            ...updatedComment
+                        };
+                    }
+                }
+            })
+            .addCase(deleteComment.fulfilled, (state, action) => {
+                const { commentId: deletedCommentId, noteId, removedCount } = action.payload as {
+                    commentId: string;
+                    noteId?: string;
+                    removedCount: number;
+                };
+
+                // Check if it's a top-level comment
+                const commentIndex = state.comments.findIndex((c) => c._id === deletedCommentId);
+
+                if (commentIndex !== -1) {
+                    const comment = state.comments[commentIndex];
+                    state.comments.splice(commentIndex, 1);
+                    state.total -= removedCount;
+                } else {
+                    // It might be a reply
+                    for (const comment of state.comments) {
+                        if (comment.replies) {
+                            const replyIndex = comment.replies.findIndex((r) => r._id === deletedCommentId);
+                            if (replyIndex !== -1) {
+                                comment.replies.splice(replyIndex, 1);
+                                comment.repliesCount = (comment.repliesCount || 1) - 1;
+                                state.total -= 1;
+                                break;
+                            }
+                        }
+                    }
                 }
             })
     },

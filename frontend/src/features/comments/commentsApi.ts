@@ -1,5 +1,16 @@
 import { api } from "@/lib/axios";
-import {CommentsResponse, CommentsParams, AddCommentParams, AddCommentsResponse, AddReplyParams, AddReplyResponse} from "@/features/comments/types";
+import {
+    CommentsResponse,
+    CommentsParams,
+    AddCommentParams,
+    AddCommentsResponse,
+    AddReplyParams,
+    AddReplyResponse,
+    EditCommentParams,
+    EditCommentResponse,
+    DeleteCommentParams,
+    DeleteCommentResponse
+} from "@/features/comments/types";
 
 export const getAllCommentsAPI = async (
     params: CommentsParams
@@ -36,5 +47,20 @@ export const addReplyAPI = async ({
         { text }
     );
 
+    return res.data;
+};
+
+export const editCommentAPI = async ({
+    commentId,
+    text
+}: EditCommentParams): Promise<EditCommentResponse> => {
+    const res = await api.put(`/protected/notes/comments/${commentId}`, { text });
+    return res.data;
+};
+
+export const deleteCommentAPI = async ({
+    commentId
+}: DeleteCommentParams): Promise<DeleteCommentResponse> => {
+    const res = await api.delete(`/protected/notes/comments/${commentId}`);
     return res.data;
 };

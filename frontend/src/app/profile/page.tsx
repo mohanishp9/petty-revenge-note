@@ -13,9 +13,10 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 import { deleteNote, resetDeleteNote } from "@/features/deleteNote/deleteNoteSlice";
 // import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 // import { deleteNote, resetDeleteNote } from "@/features/deleteNote/deleteNoteSlice";
-import { getMyNotes, resetMyNotes,removeNote } from "@/features/getMyNotes/getMyNotesSlice";
+import { getMyNotes, resetMyNotes, removeNote } from "@/features/getMyNotes/getMyNotesSlice";
 import type { Note } from "@/features/publicNote/types";
 import type { RootState } from "@/store/store";
+import CommentItem from "@/components/CommentItem";
 
 const NOTES_PER_PAGE = 12;
 const COMMENTS_PER_PAGE = 10;
@@ -26,6 +27,7 @@ const reactionSummary = (counts: Record<string, number>) => {
     const entries = Object.entries(counts).filter(([, count]) => count > 0).sort((a, b) => b[1] - a[1]);
     return entries.length ? entries.slice(0, 3).map(([emoji, count]) => `${emoji} ${count}`).join("  ") : "No reactions yet";
 };
+
 const commentAuthor = (comment: CommentType) => `Witness ${comment.user.slice(-4).toUpperCase()}`;
 
 const paperCard = {
@@ -80,6 +82,8 @@ function CommentsPanel({
     comments,
     commentsLoading,
     commentsHasMore,
+    isLoggedIn,
+    currentUser,
     onClose,
     onLoadMore,
 }: {
@@ -87,6 +91,8 @@ function CommentsPanel({
     comments: CommentType[];
     commentsLoading: boolean;
     commentsHasMore: boolean;
+    isLoggedIn: boolean;
+    currentUser: any | null;
     onClose: () => void;
     onLoadMore: () => void;
 }) {
@@ -290,6 +296,8 @@ export default function ProfilePage() {
                                 comments={comments}
                                 commentsLoading={commentsLoading}
                                 commentsHasMore={commentsHasMore}
+                                isLoggedIn={Boolean(token)}
+                                currentUser={user}
                                 onClose={() => { setActiveCommentNoteId(null); dispatch(resetComments()); }}
                                 onLoadMore={() => activeCommentNoteId && !commentsLoading && dispatch(getNoteComments({ noteId: activeCommentNoteId, page: commentsPage + 1, limit: COMMENTS_PER_PAGE }))}
                             />

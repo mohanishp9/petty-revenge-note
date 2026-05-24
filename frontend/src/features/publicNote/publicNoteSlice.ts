@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { getAllNotesAPI } from "@/features/publicNote/publicNoteApi";
+import { deleteComment } from "@/features/comments/commentsSlice";
 import { getAllNotesState, getNotesParams } from "@/features/publicNote/types";
 import { addComment } from "@/features/comments/commentsSlice";
 
@@ -142,6 +143,15 @@ const publicNoteSlice = createSlice({
                 if (note) {
                     note.commentsCount += 1;
                 }
+            })
+            .addCase(deleteComment.fulfilled, (state, action) => {
+                const { noteId, removedCount } = action.payload as { noteId?: string; removedCount: number };
+                if (!noteId) return;
+
+                const note = state.notes.find((n) => n._id === noteId);
+                if (!note) return;
+
+                note.commentsCount = Math.max(0, note.commentsCount - (removedCount || 1));
             })
             .addCase(reactToNote.pending, (state, action) => {
                 const { noteId, emoji } = action.meta.arg;

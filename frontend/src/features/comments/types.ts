@@ -57,3 +57,20 @@ export interface AddReplyParams {
 export interface AddReplyResponse extends ApiResponse {
     reply: CommentType;
 }
+
+export interface EditCommentParams {
+    commentId: string;
+    text: string;
+}
+
+export interface EditCommentResponse extends ApiResponse {
+    comment: CommentType;
+}
+
+export interface DeleteCommentParams {
+    commentId: string;
+}
+
+export interface DeleteCommentResponse extends ApiResponse {
+    message: string;
+}

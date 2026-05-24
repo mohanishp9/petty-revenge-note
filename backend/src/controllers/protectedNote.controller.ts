@@ -5,7 +5,7 @@ import Reaction from "../models/Reaction.model";
 import Comment from "../models/Comment.model";
 import { createNoteSchema } from "../utils/note.validator";
 import { reactionSchema } from "../utils/reaction.validator";
-import { addCommentSchema, addReplySchema } from "../utils/comment.validator";
+import { addCommentSchema, addReplySchema, editCommentSchema, deleteCommentSchema } from "../utils/comment.validator";
 import type { CreateNoteInput } from "../utils/note.validator";
 import type { Request, Response } from "express";
 import mongoose from "mongoose";
@@ -389,12 +389,140 @@ const deleteNoteController = asyncHandler(async (req: Request, res: Response) =>
     }
 });
 
+// @desc Edit a Comment
+// @route PUT /comments/:commentId
+// @access Private
+const editCommentController = asyncHandler(async (req, res) => {
+    const userId = req.user?._id;
+
+    if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const parsed = editCommentSchema.safeParse({
+        commentId: req.params.commentId,
+        text: req.body.text,
+    });
+
+    if (!parsed.success) {
+        return res.status(400).json({
+            message: parsed.error.issues.map(i => i.message).join(", "),
+        });
+    }
+
+    const { commentId, text } = parsed.data;
+
+    const comment = await Comment.findById(commentId);
+    if (!comment) {
+        return res.status(404).json({ message: "Comment not found" });
+    }
+
+    // Check if user owns the comment
+    if (comment.user.toString() !== userId.toString()) {
+        return res.status(403).json({ message: "Forbidden: You can only edit your own comments" });
+    }
+
+    const updatedComment = await Comment.findByIdAndUpdate(commentId, { text }, { new: true });
+
+    res.status(200).json({
+        success: true,
+        comment: updatedComment,
+    });
+});
+
+// @desc Delete a Comment
+// @route DELETE /comments/:commentId
+// @access Private
+const deleteCommentController = asyncHandler(async (req, res) => {
+    const userId = req.user?._id;
+
+    if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const parsed = deleteCommentSchema.safeParse({
+        commentId: req.params.commentId
+    });
+
+    if (!parsed.success) {
+        return res.status(400).json({
+            message: parsed.error.issues?.[0]?.message || "Invalid comment id"
+        });
+    }
+
+    const { commentId } = parsed.data;
+
+    // First, find the comment to get its details
+    const comment = await Comment.findById(commentId);
+    if (!comment) {
+        return res.status(404).json({ message: "Comment not found" });
+    }
+
+    // Check if user owns the comment
+    if (comment.user.toString() !== userId.toString()) {
+        return res.status(403).json({ message: "Forbidden: You can only delete your own comments" });
+    }
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        let commentsCountDecrement = 1; // At minimum, decrement by 1 for the comment being deleted
+
+        // For parent comments, delete all its replies and count them
+        if (comment.parentCommentId === null) {
+            // This is a parent comment, count and delete all its replies
+            const childComments = await Comment.find({
+                parentCommentId: comment._id
+            }).session(session);
+
+            commentsCountDecrement += childComments.length;
+
+            await Comment.deleteMany({
+                parentCommentId: comment._id
+            }).session(session);
+        }
+
+        // Delete the comment
+        await Comment.deleteOne({ _id: comment._id }).session(session);
+
+        // Update parent comment's repliesCount if it's a reply
+        if (comment.parentCommentId) {
+            await Comment.updateOne(
+                { _id: comment.parentCommentId },
+                { $inc: { repliesCount: -1 } }
+            ).session(session);
+        }
+
+        // Decrement the note's commentsCount
+        await Note.updateOne(
+            { _id: comment.noteId },
+            { $inc: { commentsCount: -commentsCountDecrement } }
+        ).session(session);
+
+        await session.commitTransaction();
+
+        return res.status(200).json({
+            success: true,
+            message: "Comment deleted successfully"
+        });
+    } catch (err) {
+        await session.abortTransaction();
+        session.endSession();
+        throw err;
+    } finally {
+        await session.endSession();
+    }
+});
+
 export {
-    createNoteController, // done
-    toggleLikeController, // done
-    reactionController, // done
-    addCommentController, // done
-    addReplyController, // done
-    getMyNotes, // done
-    deleteNoteController, // implemented
-}
+    createNoteController,
+    toggleLikeController,
+    reactionController,
+    addCommentController,
+    addReplyController,
+    getMyNotes,
+    deleteNoteController,
+    editCommentController,
+    deleteCommentController
+};

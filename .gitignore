@@ -79,6 +79,7 @@ Thumbs.db
 # Graphify outputs
 # ----------------------------------
 graphify-out/
+.graphifyignore
 
 # ----------------------------------
 # AI tooling / Claude / MCP
@@ -93,3 +94,7 @@ skills-lock.json
 # Ignore all markdown files
 # ----------------------------------
 *.md
+
+# Ignore Graphify AI tooling files
+.graphify_detect.json
+.graphify_python
