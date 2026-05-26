@@ -7,6 +7,7 @@ export interface ISession {
     ip?: string;
     userAgent?: string;
     revoked: boolean;
+    rotatedAt?: Date; // For grace period during rotation
     createdAt: Date;
     updatedAt: Date;
 }

@@ -140,7 +140,6 @@ const registerUserController = asyncHandler(async (req: Request, res: Response) 
                 email: user.email,
             },
             accessToken,
-            refreshToken: refreshTokenJWT, // For clients that can't use cookies
         });
     } catch (error) {
         await dbSession.abortTransaction();
@@ -245,7 +244,6 @@ const loginUserController = asyncHandler(async (req: Request, res: Response) => 
                 email: user.email,
             },
             accessToken,
-            refreshToken: refreshTokenJWT,
         });
     } catch (error) {
         await dbSession.abortTransaction();
@@ -263,14 +261,11 @@ const loginUserController = asyncHandler(async (req: Request, res: Response) => 
 // @route POST /refresh
 // @access Public (requires valid refresh token)
 const refreshTokensController = asyncHandler(async (req: Request, res: Response) => {
-    // Get refresh token from cookie or body
-    const refreshTokenFromCookie = req.cookies?.refreshToken as string | undefined;
-    const refreshTokenFromBody = req.body?.refreshToken as string | undefined;
-    const refreshTokenFromHeader = req.headers["x-refresh-token"] as string | undefined;
-
-    const refreshToken = refreshTokenFromCookie || refreshTokenFromBody || refreshTokenFromHeader;
+    // Get refresh token ONLY from cookie
+    const refreshToken = req.cookies?.refreshToken as string | undefined;
 
     if (!refreshToken) {
+        console.log("Refresh token missing from cookies");
         return res.status(401).json({
             success: false,
             message: "Refresh token required",
@@ -294,9 +289,12 @@ const refreshTokensController = asyncHandler(async (req: Request, res: Response)
     const session = await Session.findById(sessionId);
 
     // CRITICAL: REUSE DETECTION & SECRET VERIFICATION
-    // 1. If session doesn't exist OR is already revoked, potential theft detected
-    // 2. If tokenFamily is missing OR doesn't match the hash, potential theft detected
-    let isInvalid = !session || session.revoked;
+    // Allow a short grace period (30s) for revoked sessions to handle multi-tab races
+    const GRACE_PERIOD_MS = 30000;
+    const isWithinGracePeriod = session?.revoked && session.rotatedAt && 
+                               (Date.now() - session.rotatedAt.getTime() < GRACE_PERIOD_MS);
+
+    let isInvalid = !session || (session.revoked && !isWithinGracePeriod);
     
     if (session && !isInvalid && tokenFamily) {
         const isSecretValid = await session.compareRefreshToken(tokenFamily);
@@ -323,6 +321,17 @@ const refreshTokensController = asyncHandler(async (req: Request, res: Response)
         });
     }
 
+    // If we're within grace period, we don't rotate again, just return a new access token
+    if (isWithinGracePeriod) {
+        console.log(`Grace period triggered for user ${userId}, session ${sessionId}`);
+        const accessToken = generateAccessToken(userId, sessionId);
+        return res.status(200).json({
+            success: true,
+            message: "Tokens refreshed successfully (grace period)",
+            accessToken,
+        });
+    }
+
     // Verify session belongs to correct user
     if (session!.userId.toString() !== userId) {
         console.warn(`SECURITY ALERT: Session user mismatch for user ${userId}, session ${sessionId}`);
@@ -346,7 +355,7 @@ const refreshTokensController = asyncHandler(async (req: Request, res: Response)
         // an un-revoked session. This eliminates the race window.
         const sessionToRotate = await Session.findOneAndUpdate(
             { _id: sessionId, revoked: false },
-            { $set: { revoked: true } },
+            { $set: { revoked: true, rotatedAt: new Date() } },
             { session: dbSession, new: true }
         );
 
@@ -410,7 +419,6 @@ const refreshTokensController = asyncHandler(async (req: Request, res: Response)
             success: true,
             message: "Tokens refreshed successfully",
             accessToken: newAccessToken,
-            refreshToken: newRefreshTokenJWT,
         });
     } catch (error) {
         await dbSession.abortTransaction();

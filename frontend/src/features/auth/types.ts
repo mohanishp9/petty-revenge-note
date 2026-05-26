@@ -22,7 +22,6 @@ export interface AuthResponse {
     message?: string;
     user: User;
     accessToken: string;
-    refreshToken?: string; // Optional, may be sent for non-browser clients
 }
 
 export interface AuthState {

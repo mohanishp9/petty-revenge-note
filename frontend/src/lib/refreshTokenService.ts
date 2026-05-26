@@ -114,23 +114,32 @@ export function createRefreshTokenInterceptor(api: AxiosInstance): void {
                 }
             } catch (refreshError) {
                 const axiosError = refreshError as AxiosError<RefreshError>;
+                const status = axiosError.response?.status;
                 const errorData = axiosError.response?.data;
 
-                // Check for security incident (token reuse detected)
-                if (errorData?.securityIncident) {
-                    console.warn("Security incident detected: Token reuse. All sessions revoked.");
+                // ONLY clear session if it's an authentication error (401 or 403)
+                // This prevents logging out on network errors or server 500s
+                if (status === 401 || status === 403) {
+                    // Check for security incident (token reuse detected)
+                    if (errorData?.securityIncident) {
+                        console.warn("Security incident detected: Token reuse. All sessions revoked.");
+                    }
+
+                    // Handle refresh failure (clears tokens and flag)
+                    handleRefreshFailure();
+
+                    const error = new Error(
+                        errorData?.message || "Session expired. Please login again."
+                    );
+                    refreshTokenQueue.rejectQueue(error);
+                    return Promise.reject(error);
+                } else {
+                    // For network errors, 500s, etc., don't clear the session flag
+                    // Just reset the refreshing state so it can be tried again
+                    refreshTokenQueue.setIsRefreshing(false);
+                    refreshTokenQueue.rejectQueue(new Error("Network error during token refresh"));
+                    return Promise.reject(refreshError);
                 }
-
-                // Handle refresh failure
-                handleRefreshFailure();
-
-                // Reject all queued requests
-                const error = new Error(
-                    errorData?.message || "Session expired. Please login again."
-                );
-                refreshTokenQueue.rejectQueue(error);
-
-                return Promise.reject(error);
             }
         }
     );

@@ -30,6 +30,10 @@ const sessionSchema = new Schema<ISession, SessionModel, ISessionMethods>(
             default: false,
             index: true,
         },
+        rotatedAt: {
+            type: Date,
+            required: false,
+        },
     },
     {
         timestamps: true,

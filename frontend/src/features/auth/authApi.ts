@@ -103,10 +103,6 @@ export const revokeSessionAPI = async (
     return res.data;
 };
 
-/**
- * Refresh tokens manually
- * Note: This is usually handled automatically by the interceptor
- */
 export const refreshTokensAPI = async (): Promise<AuthResponse> => {
     const res = await api.post<AuthResponse>("/auth/refresh");
 

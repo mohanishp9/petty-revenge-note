@@ -237,13 +237,12 @@ const authSlice = createSlice({
                 state.isAuthenticated = true;
                 // Token is already in memory from refresh
             })
-            .addCase(fetchCurrentUser.rejected, (state) => {
+            .addCase(fetchCurrentUser.rejected, (state, action) => {
                 state.loading = false;
-                state.user = null;
-                state.accessToken = null;
-                state.isAuthenticated = false;
-                tokenManager.clearToken();
-                sessionFlag.clear();
+                // We don't clear the state here because handleRefreshFailure 
+                // in the interceptor will handle clearing if it was an auth failure.
+                // If it was a network failure, we want to keep the session flag.
+                state.error = action.payload as string;
             });
     },
 });
