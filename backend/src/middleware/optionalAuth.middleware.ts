@@ -1,25 +1,48 @@
 import type { Request, Response, NextFunction } from "express";
-import { verifyToken } from "../utils/jwt";
-import mongoose from "mongoose";
+import { verifyAccessToken } from "../utils/tokens";
+import User from "../models/User.model";
+import Session from "../models/Session.model";
 
-export const optionalAuth = (req: Request, res: Response, next: NextFunction) => {
-    const cookieToken = req.cookies?.token as string | undefined;
+/**
+ * Optional authentication middleware
+ * Attaches user if valid token is present, but doesn't block if missing
+ */
+export const optionalAuth = async (req: Request, res: Response, next: NextFunction) => {
+    // Extract access token from multiple sources
     const authHeader = req.headers.authorization;
     const bearerToken = authHeader?.startsWith("Bearer ")
         ? authHeader.slice("Bearer ".length)
         : undefined;
-    const token = cookieToken || bearerToken;
 
-    if (!token) {
+    const headerToken = req.headers["x-access-token"] as string | undefined;
+    const accessToken = bearerToken || headerToken;
+
+    if (!accessToken) {
         return next();
     }
 
-    const decoded = verifyToken(token);
+    try {
+        const decoded = verifyAccessToken(accessToken);
 
-    if (decoded) {
-        req.user = {
-            _id: new mongoose.Types.ObjectId(decoded.id)
-        };
+        if (decoded && decoded.userId && decoded.sessionId) {
+            const session = await Session.findById(decoded.sessionId);
+
+            if (session && !session.revoked && session.userId.toString() === decoded.userId) {
+                const user = await User.findById(decoded.userId).select("-password");
+
+                if (user) {
+                    req.user = {
+                        _id: user._id,
+                        username: user.username,
+                        email: user.email,
+                    };
+                    req.sessionId = decoded.sessionId;
+                }
+            }
+        }
+    } catch (error) {
+        // Silently continue without user
     }
+
     next();
 };

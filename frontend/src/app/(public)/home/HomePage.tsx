@@ -7,7 +7,8 @@ import { ChevronDown, Heart, LoaderCircle, MessageCircle, Send, SmilePlus, X, Re
 import { useAppDispatch } from "@/app/hook/dispatch";
 import { addComment, addReply, getNoteComments, resetComments, editComment, deleteComment } from "@/features/comments/commentsSlice";
 import type { CommentType, CommentsState } from "@/features/comments/types";
-import { setUserFromStorage, getCurrentUser } from "@/features/auth/authSlice";
+import { initializeAuth, fetchCurrentUser } from "@/features/auth/authSlice";
+import { sessionFlag } from "@/lib/tokenManager";
 import { getAllNotes, reactToNote, toggleLike } from "@/features/publicNote/publicNoteSlice";
 import type { Note, getNotesParams } from "@/features/publicNote/types";
 import { clearTopNotesByEmoji, getTopNotesByEmoji } from "@/features/topNotesByEmoji/topNotesByEmojiSlice";
@@ -427,7 +428,7 @@ const HomePage = () => {
     const { notes, loading, error, count } = useSelector(
         (state: RootState) => state.publicNote
     );
-    const { token, user } = useSelector((state: RootState) => state.auth);
+    const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
     const commentsState = useSelector((state: RootState) => state.comments);
     const topNotesByEmoji = useSelector((state: RootState) => state.getTopNotesByEmoji);
 
@@ -450,16 +451,20 @@ const HomePage = () => {
     const feedError = selectedEmoji ? topNotesByEmoji.error : error;
 
     useEffect(() => {
-        dispatch(setUserFromStorage());
+        dispatch(initializeAuth());
+        // If we have a session flag but no user, try to fetch user
+        if (sessionFlag.get()) {
+            dispatch(fetchCurrentUser());
+        }
     }, [dispatch]);
 
     useEffect(() => {
-        if (!token || user) {
+        if (!isAuthenticated || user) {
             return;
         }
 
-        dispatch(getCurrentUser());
-    }, [dispatch, token, user]);
+        dispatch(fetchCurrentUser());
+    }, [dispatch, isAuthenticated, user]);
 
     useEffect(() => {
         if (selectedEmoji) {
@@ -469,7 +474,7 @@ const HomePage = () => {
         dispatch(
             getAllNotes(sort ? { sort, page, limit: NOTES_PER_PAGE } : { page, limit: NOTES_PER_PAGE })
         );
-    }, [dispatch, sort, page, selectedEmoji, token]);
+    }, [dispatch, sort, page, selectedEmoji]);
 
     useEffect(() => {
         const node = loadMoreRef.current;
@@ -748,7 +753,7 @@ const HomePage = () => {
                                 <NoteCard
                                     key={note._id}
                                     isCommentsOpen={activeCommentNoteId === note._id}
-                                    isLoggedIn={Boolean(token)}
+                                    isLoggedIn={isAuthenticated}
                                     note={note}
                                     onCommentToggle={handleCommentToggle}
                                 />
@@ -789,7 +794,7 @@ const HomePage = () => {
                                 activeNote={activeNote}
                                 commentInput={commentInput}
                                 commentsState={commentsState}
-                                isLoggedIn={Boolean(token)}
+                                isLoggedIn={isAuthenticated}
                                 currentUser={user}
                                 onChangeInput={setCommentInput}
                                 onClose={handleCloseComments}

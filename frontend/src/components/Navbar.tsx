@@ -7,8 +7,9 @@ import { LogOut, ShieldUser } from "lucide-react";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import { useAppDispatch } from "@/app/hook/dispatch";
-import { clearError, logoutUser, setUserFromStorage } from "@/features/auth/authSlice";
+import { clearError, logoutUser, initializeAuth, fetchCurrentUser } from "@/features/auth/authSlice";
 import type { RootState } from "@/store/store";
+import { sessionFlag } from "@/lib/tokenManager";
 
 const navLinkStyle = (isActive: boolean): React.CSSProperties => ({
     fontFamily: "var(--font-special-elite), monospace",
@@ -32,15 +33,21 @@ const Navbar = () => {
     const dispatch = useAppDispatch();
     const pathname = usePathname();
     const router = useRouter();
-    const { token, loading, error } = useSelector((state: RootState) => state.auth);
+    const { isAuthenticated, loading, error } = useSelector((state: RootState) => state.auth);
 
-    useEffect(() => { dispatch(setUserFromStorage()); }, [dispatch]);
+    useEffect(() => {
+        dispatch(initializeAuth());
+        // If we have a session flag but no user, try to fetch user
+        if (sessionFlag.get()) {
+            dispatch(fetchCurrentUser());
+        }
+    }, [dispatch]);
 
     useEffect(() => {
         if (error) { toast.error(error); dispatch(clearError()); }
     }, [dispatch, error]);
 
-    const isLoggedIn = Boolean(token);
+    const isLoggedIn = isAuthenticated;
 
     const handleLogout = async () => {
         const action = await dispatch(logoutUser());
