@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { Reply, Pencil, Trash2, Send } from "lucide-react";
+import { useSelector } from "react-redux";
 import { useAppDispatch } from "@/app/hook/dispatch";
 import { editComment, deleteComment } from "@/features/comments/commentsSlice";
 import type { CommentType } from "@/features/comments/types";
+import type { RootState } from "@/store/store";
 
 interface CommentItemProps {
     comment: CommentType;
@@ -30,6 +32,7 @@ const CommentItem = ({
     onReplySubmit,
 }: CommentItemProps) => {
     const dispatch = useAppDispatch();
+    const { loading: isCommentsLoading } = useSelector((state: RootState) => state.comments);
     const [isEditing, setIsEditing] = useState(false);
     const [editText, setEditText] = useState(comment.text);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -45,7 +48,7 @@ const CommentItem = ({
     };
 
     const handleEditSubmit = async () => {
-        if (!editText.trim() || editText === comment.text) {
+        if (!editText.trim() || editText === comment.text || isCommentsLoading) {
             setIsEditing(false);
             return;
         }
@@ -55,6 +58,7 @@ const CommentItem = ({
     };
 
     const handleDelete = async () => {
+        if (isCommentsLoading) return;
         setIsDeleting(true);
         await dispatch(deleteComment({ commentId: comment._id }));
         setIsDeleting(false);
@@ -141,11 +145,11 @@ const CommentItem = ({
                             <button
                                 type="button"
                                 onClick={handleEditSubmit}
-                                disabled={!editText.trim() || editText === comment.text}
+                                disabled={!editText.trim() || editText === comment.text || isCommentsLoading}
                                 className="font-special-elite text-[9px] uppercase tracking-[0.2em]"
-                                style={{ color: "#6a4515", opacity: !editText.trim() || editText === comment.text ? 0.6 : 1 }}
+                                style={{ color: "#6a4515", opacity: !editText.trim() || editText === comment.text || isCommentsLoading ? 0.6 : 1 }}
                             >
-                                Save
+                                {isCommentsLoading ? "Saving..." : "Save"}
                             </button>
                         </div>
                     </div>
@@ -208,17 +212,17 @@ const CommentItem = ({
                     <button
                         type="button"
                         onClick={() => onReplySubmit(comment._id, replyInput || "")}
-                        disabled={!replyInput?.trim()}
+                        disabled={!replyInput?.trim() || isCommentsLoading}
                         className="font-special-elite mt-2 flex items-center gap-2 rounded-sm px-3 py-2 text-[9px] uppercase tracking-[0.2em] transition"
                         style={{
                             background: "rgba(122,90,34,0.12)",
                             border: "1px solid rgba(120,80,20,0.22)",
                             color: "#6a4515",
-                            opacity: !replyInput?.trim() ? 0.6 : 1,
+                            opacity: !replyInput?.trim() || isCommentsLoading ? 0.6 : 1,
                         }}
                     >
-                        <Send className="h-3 w-3" />
-                        <span>Send Reply</span>
+                        <Send className={`h-3 w-3 ${isCommentsLoading ? "animate-pulse" : ""}`} />
+                        <span>{isCommentsLoading ? "Sending..." : "Send Reply"}</span>
                     </button>
                 </div>
             )}

@@ -122,7 +122,7 @@ const commentsSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
-
+            // GET COMMENTS
             .addCase(getNoteComments.pending, (state, action) => {
                 const { noteId, page = 1 } = action.meta.arg;
                 state.loading = true;
@@ -134,7 +134,6 @@ const commentsSlice = createSlice({
 
                 state.currentNoteId = noteId;
             })
-
             .addCase(getNoteComments.fulfilled, (state, action) => {
                 const { comments, page, total, hasMore } = action.payload;
                 const noteId = action.meta.arg.noteId;
@@ -160,26 +159,42 @@ const commentsSlice = createSlice({
                 state.total = total;
                 state.hasMore = hasMore;
             })
-
             .addCase(getNoteComments.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
             })
+
+            // ADD COMMENT
+            .addCase(addComment.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
             .addCase(addComment.fulfilled,  (state, action) => {
                 const newComment = action.payload;
+                state.loading = false;
 
                 if (state.currentNoteId !== newComment.noteId) return;
 
                 state.comments.unshift(newComment);
-
                 state.total += 1;
 
                 if (state.comments.length > state.limit) {
                     state.comments.pop();
                 }
             })
+            .addCase(addComment.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            })
+
+            // ADD REPLY
+            .addCase(addReply.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
             .addCase(addReply.fulfilled, (state, action) => {
                 const newReply = action.payload;
+                state.loading = false;
 
                 // Find the parent comment and add the reply
                 const parentComment = state.comments.find(
@@ -194,8 +209,19 @@ const commentsSlice = createSlice({
                     parentComment.repliesCount = (parentComment.repliesCount || 0) + 1;
                 }
             })
+            .addCase(addReply.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            })
+
+            // EDIT COMMENT
+            .addCase(editComment.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
             .addCase(editComment.fulfilled, (state, action) => {
                 const updatedComment = action.payload;
+                state.loading = false;
 
                 if (updatedComment.parentCommentId) {
                     // It's a reply
@@ -217,12 +243,24 @@ const commentsSlice = createSlice({
                     }
                 }
             })
+            .addCase(editComment.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            })
+
+            // DELETE COMMENT
+            .addCase(deleteComment.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
             .addCase(deleteComment.fulfilled, (state, action) => {
                 const { commentId: deletedCommentId, noteId, removedCount } = action.payload as {
                     commentId: string;
                     noteId?: string;
                     removedCount: number;
                 };
+
+                state.loading = false;
 
                 // Check if it's a top-level comment
                 const commentIndex = state.comments.findIndex((c) => c._id === deletedCommentId);
@@ -245,6 +283,10 @@ const commentsSlice = createSlice({
                         }
                     }
                 }
+            })
+            .addCase(deleteComment.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
             })
     },
 });

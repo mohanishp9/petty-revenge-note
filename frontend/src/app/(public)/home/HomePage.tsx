@@ -404,17 +404,17 @@ const CommentsPanel = ({
                         />
                         <button
                             type="submit"
-                            disabled={!isLoggedIn || !commentInput.trim()}
+                            disabled={!isLoggedIn || !commentInput.trim() || commentsState.loading}
                             className="font-special-elite flex w-full items-center justify-center gap-2 rounded-sm px-4 py-3 text-[10px] uppercase tracking-[0.22em] transition"
                             style={{
                                 background: "rgba(122,90,34,0.12)",
                                 border: "1px solid rgba(120,80,20,0.22)",
                                 color: "#6a4515",
-                                opacity: !isLoggedIn || !commentInput.trim() ? 0.6 : 1,
+                                opacity: !isLoggedIn || !commentInput.trim() || commentsState.loading ? 0.6 : 1,
                             }}
                         >
-                            <Send className="h-4 w-4" />
-                            <span>Add Comment</span>
+                            <Send className={`h-4 w-4 ${commentsState.loading ? "animate-pulse" : ""}`} />
+                            <span>{commentsState.loading ? "Adding..." : "Add Comment"}</span>
                         </button>
                     </form>
                 </div>
@@ -590,7 +590,7 @@ const HomePage = () => {
     const handleCommentSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        if (!activeCommentNoteId || !commentInput.trim()) {
+        if (!activeCommentNoteId || !commentInput.trim() || commentsState.loading) {
             return;
         }
 
@@ -607,7 +607,7 @@ const HomePage = () => {
     };
 
     const handleReplySubmit = async (commentId: string, text: string) => {
-        if (!text.trim()) {
+        if (!text.trim() || commentsState.loading) {
             return;
         }
 
