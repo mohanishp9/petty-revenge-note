@@ -142,7 +142,7 @@ export const getRefreshTokenCookieOptions = () => {
     return {
         httpOnly: true,
         secure: isProduction,
-        sameSite: "lax" as const,
+        sameSite: isProduction ? ("none" as const) : ("lax" as const),
         maxAge: REFRESH_TOKEN_EXPIRES_MS,
         expires: new Date(Date.now() + REFRESH_TOKEN_EXPIRES_MS),
         path: "/", // Available to all routes
@@ -158,7 +158,7 @@ export const getClearRefreshTokenCookieOptions = () => {
     return {
         httpOnly: true,
         secure: isProduction,
-        sameSite: "lax" as const,
+        sameSite: isProduction ? ("none" as const) : ("lax" as const),
         path: "/",
     };
 };
