@@ -7,7 +7,7 @@ import { LogOut, ShieldUser } from "lucide-react";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import { useAppDispatch } from "@/app/hook/dispatch";
-import { clearError, logoutUser, setUserFromStorage } from "@/features/auth/authSlice";
+import { clearError, logoutUser } from "@/features/auth/authSlice";
 import type { RootState } from "@/store/store";
 
 const navLinkStyle = (isActive: boolean): React.CSSProperties => ({
@@ -32,15 +32,13 @@ const Navbar = () => {
     const dispatch = useAppDispatch();
     const pathname = usePathname();
     const router = useRouter();
-    const { token, loading, error } = useSelector((state: RootState) => state.auth);
-
-    useEffect(() => { dispatch(setUserFromStorage()); }, [dispatch]);
+    const { accessToken, loading, error } = useSelector((state: RootState) => state.auth);
 
     useEffect(() => {
         if (error) { toast.error(error); dispatch(clearError()); }
     }, [dispatch, error]);
 
-    const isLoggedIn = Boolean(token);
+    const isLoggedIn = Boolean(accessToken);
 
     const handleLogout = async () => {
         const action = await dispatch(logoutUser());

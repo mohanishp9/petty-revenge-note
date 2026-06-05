@@ -130,7 +130,7 @@ function CommentsPanel({
 export default function ProfilePage() {
     const dispatch = useAppDispatch();
     const router = useRouter();
-    const { user, token, loading: authLoading } = useSelector((state: RootState) => state.auth);
+    const { user, accessToken, loading: authLoading } = useSelector((state: RootState) => state.auth);
     const { notes, total, loading: notesLoading, error: notesError, page } = useSelector((state: RootState) => state.getMyNote);
     const { comments, loading: commentsLoading, hasMore: commentsHasMore, page: commentsPage } = useSelector((state: RootState) => state.comments);
     const {
@@ -151,21 +151,19 @@ export default function ProfilePage() {
     const isCommentPanelOpen = Boolean(activeCommentNoteId);
 
     useEffect(() => {
-        dispatch(setUserFromStorage());
-    }, [dispatch]);
-
-    useEffect(() => {
-        if (typeof window === "undefined") return;
-        const hasSession = localStorage.getItem("hasSession") === "true";
-        if (!hasSession) {
+        if (authLoading) return;
+        if (!accessToken) {
             router.push("/login");
             return;
         }
-        if (!token) return;
-        dispatch(getCurrentUser());
+
+        if (!user) {
+            dispatch(getCurrentUser());
+        }
+
         dispatch(resetMyNotes());
         dispatch(getMyNotes({ page: 1, limit: NOTES_PER_PAGE }));
-    }, [dispatch, router, token]);
+    }, [dispatch, router, accessToken, user, authLoading]);
 
     useEffect(() => {
         if (!activeCommentNoteId) {
@@ -258,7 +256,7 @@ export default function ProfilePage() {
                         <div className="grid gap-3 sm:grid-cols-2">
                             <div className="rounded-sm border px-4 py-3" style={{ borderColor: "rgba(120,80,20,0.14)", background: "rgba(255,249,236,0.52)" }}>
                                 <p className="font-special-elite text-[10px] uppercase tracking-[0.24em]" style={{ color: "#7a5a22" }}>Status</p>
-                                <p className="font-crimson mt-2 text-base italic" style={{ color: "#5f3b17" }}>{token ? "Logged in and ready to write" : "Checking session"}</p>
+                                <p className="font-crimson mt-2 text-base italic" style={{ color: "#5f3b17" }}>{accessToken ? "Logged in and ready to write" : "Checking session"}</p>
                             </div>
                             <div className="rounded-sm border px-4 py-3" style={{ borderColor: "rgba(120,80,20,0.14)", background: "rgba(255,249,236,0.52)" }}>
                                 <p className="font-special-elite text-[10px] uppercase tracking-[0.24em]" style={{ color: "#7a5a22" }}>Archive</p>
@@ -296,7 +294,7 @@ export default function ProfilePage() {
                                 comments={comments}
                                 commentsLoading={commentsLoading}
                                 commentsHasMore={commentsHasMore}
-                                isLoggedIn={Boolean(token)}
+                                isLoggedIn={Boolean(accessToken)}
                                 currentUser={user}
                                 onClose={() => { setActiveCommentNoteId(null); dispatch(resetComments()); }}
                                 onLoadMore={() => activeCommentNoteId && !commentsLoading && dispatch(getNoteComments({ noteId: activeCommentNoteId, page: commentsPage + 1, limit: COMMENTS_PER_PAGE }))}

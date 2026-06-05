@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Reply, Pencil, Trash2, Send } from "lucide-react";
+import { Reply, Pencil, Trash2, Send, ChevronDown, ChevronUp } from "lucide-react";
 import { useAppDispatch } from "@/app/hook/dispatch";
 import { editComment, deleteComment } from "@/features/comments/commentsSlice";
 import type { CommentType } from "@/features/comments/types";
@@ -34,10 +34,15 @@ const CommentItem = ({
     const [editText, setEditText] = useState(comment.text);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [showReplies, setShowReplies] = useState(false);
 
     const isReplying = replyingTo === comment._id;
     const hasReplies = comment.replies && comment.replies.length > 0;
     const isOwner = currentUser && currentUser._id === comment.user;
+
+    const handleToggleReplies = () => {
+        setShowReplies((prev) => !prev);
+    }
 
     const handleEditToggle = () => {
         setIsEditing(!isEditing);
@@ -109,9 +114,21 @@ const CommentItem = ({
                     </p>
                     <div className="flex items-center gap-2">
                         {hasReplies && (
-                            <span className="font-crimson text-xs italic" style={{ color: "#8a6030" }}>
-                                {comment.repliesCount} {comment.repliesCount === 1 ? "reply" : "replies"}
-                            </span>
+                            <button
+                                type="button"
+                                onClick={handleToggleReplies}
+                                className="flex items-center gap-1 font-crimson text-xs italic hover:underline focus:outline-none"
+                                style={{ color: "#8a6030" }}
+                            >
+                                <span>
+                                    {comment.repliesCount} {comment.repliesCount === 1 ? "reply" : "replies"}
+                                </span>
+                                {showReplies ? (
+                                    <ChevronUp className="h-3 w-3" />
+                                ) : (
+                                    <ChevronDown className="h-3 w-3" />
+                                )}
+                            </button>
                         )}
                         <p className="font-crimson text-xs italic" style={{ color: "#8a6030" }}>
                             {new Date(comment.createdAt).toLocaleString()}
@@ -157,7 +174,7 @@ const CommentItem = ({
 
                 <div className="mt-2 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        {isLoggedIn && !isEditing && onReplyClick && (
+                        {isLoggedIn && !isEditing && onReplyClick && !comment.parentCommentId && (
                             <button
                                 type="button"
                                 onClick={() => onReplyClick(comment._id)}
@@ -223,7 +240,7 @@ const CommentItem = ({
                 </div>
             )}
 
-            {hasReplies && (
+            {hasReplies && showReplies && (
                 <div className="ml-4 space-y-2 border-l-2 pl-3" style={{ borderColor: "rgba(120,80,20,0.12)" }}>
                     {comment.replies!.map((reply) => (
                         <CommentItem

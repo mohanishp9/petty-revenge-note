@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { verifyToken } from "../utils/jwt";
+import { verifyAccessToken } from "../utils/jwt";
 import mongoose from "mongoose";
 
 export const optionalAuth = (req: Request, res: Response, next: NextFunction) => {
@@ -14,7 +14,7 @@ export const optionalAuth = (req: Request, res: Response, next: NextFunction) =>
         return next();
     }
 
-    const decoded = verifyToken(token);
+    const decoded = verifyAccessToken(token);
 
     if (decoded) {
         req.user = {

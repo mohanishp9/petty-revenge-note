@@ -98,3 +98,6 @@ skills-lock.json
 # Ignore Graphify AI tooling files
 .graphify_detect.json
 .graphify_python
+
+.gemini/
+.antigravitycli/

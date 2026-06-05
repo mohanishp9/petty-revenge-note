@@ -3,11 +3,11 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
-import { ChevronDown, Heart, LoaderCircle, MessageCircle, Send, SmilePlus, X, Reply, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, Heart, LoaderCircle, MessageCircle, Send, SmilePlus, X } from "lucide-react";
 import { useAppDispatch } from "@/app/hook/dispatch";
-import { addComment, addReply, getNoteComments, resetComments, editComment, deleteComment } from "@/features/comments/commentsSlice";
-import type { CommentType, CommentsState } from "@/features/comments/types";
-import { setUserFromStorage, getCurrentUser } from "@/features/auth/authSlice";
+import { addComment, addReply, getNoteComments, resetComments } from "@/features/comments/commentsSlice";
+import type { CommentsState } from "@/features/comments/types";
+import { getCurrentUser } from "@/features/auth/authSlice";
 import { getAllNotes, reactToNote, toggleLike } from "@/features/publicNote/publicNoteSlice";
 import type { Note, getNotesParams } from "@/features/publicNote/types";
 import { clearTopNotesByEmoji, getTopNotesByEmoji } from "@/features/topNotesByEmoji/topNotesByEmojiSlice";
@@ -253,7 +253,7 @@ type CommentsPanelProps = {
     commentInput: string;
     commentsState: CommentsState;
     isLoggedIn: boolean;
-    currentUser: any;
+    currentUser: unknown;
     onChangeInput: (value: string) => void;
     onClose: () => void;
     onLoadMore: () => void;
@@ -427,7 +427,7 @@ const HomePage = () => {
     const { notes, loading, error, count } = useSelector(
         (state: RootState) => state.publicNote
     );
-    const { token, user } = useSelector((state: RootState) => state.auth);
+    const { accessToken, user } = useSelector((state: RootState) => state.auth);
     const commentsState = useSelector((state: RootState) => state.comments);
     const topNotesByEmoji = useSelector((state: RootState) => state.getTopNotesByEmoji);
 
@@ -450,16 +450,12 @@ const HomePage = () => {
     const feedError = selectedEmoji ? topNotesByEmoji.error : error;
 
     useEffect(() => {
-        dispatch(setUserFromStorage());
-    }, [dispatch]);
-
-    useEffect(() => {
-        if (!token || user) {
+        if (!accessToken || user) {
             return;
         }
 
         dispatch(getCurrentUser());
-    }, [dispatch, token, user]);
+    }, [dispatch, accessToken, user]);
 
     useEffect(() => {
         if (selectedEmoji) {
@@ -469,7 +465,7 @@ const HomePage = () => {
         dispatch(
             getAllNotes(sort ? { sort, page, limit: NOTES_PER_PAGE } : { page, limit: NOTES_PER_PAGE })
         );
-    }, [dispatch, sort, page, selectedEmoji, token]);
+}, [dispatch, sort, page, selectedEmoji, accessToken]);
 
     useEffect(() => {
         const node = loadMoreRef.current;
@@ -748,7 +744,7 @@ const HomePage = () => {
                                 <NoteCard
                                     key={note._id}
                                     isCommentsOpen={activeCommentNoteId === note._id}
-                                    isLoggedIn={Boolean(token)}
+                                    isLoggedIn={Boolean(accessToken)}
                                     note={note}
                                     onCommentToggle={handleCommentToggle}
                                 />
@@ -789,7 +785,7 @@ const HomePage = () => {
                                 activeNote={activeNote}
                                 commentInput={commentInput}
                                 commentsState={commentsState}
-                                isLoggedIn={Boolean(token)}
+                                isLoggedIn={Boolean(accessToken)}
                                 currentUser={user}
                                 onChangeInput={setCommentInput}
                                 onClose={handleCloseComments}
