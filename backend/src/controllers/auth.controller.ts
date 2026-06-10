@@ -3,7 +3,7 @@ import { registerSchema, loginSchema } from "../utils/validation";
 import type { RegisterInput, LoginInput } from "../utils/validation";
 import User from "../models/User.model";
 import Note from "../models/Note.model";
-import { generateToken } from "../utils/jwt";
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "../utils/jwt";
 import type { Request, Response } from "express";
 
 // @desc Create a new user
@@ -43,11 +43,15 @@ const registerUserController = asyncHandler(async (req: Request, res: Response) 
     })
 
     if (user) {
-        const jwtToken = generateToken(user._id.toString());
-        res.cookie("token", jwtToken, {
+        // Create access token
+        const accessToken = generateAccessToken(user._id.toString());
+        // Create refresh token
+        const refreshToken = generateRefreshToken(user._id.toString());
+        res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            // sameSite: "strict",
             maxAge: 7 * 24 * 60 * 60 * 1000,
         })
 
@@ -58,7 +62,7 @@ const registerUserController = asyncHandler(async (req: Request, res: Response) 
                 username: user.username,
                 email: user.email,
             },
-            token: jwtToken,
+            accessToken: accessToken,
         })
     } else {
         return res.status(400).json({
@@ -93,13 +97,18 @@ const loginUserController = asyncHandler(async (req: Request, res: Response) => 
     }
 
     if (await user.comparePassword(password)) {
-        const jwtToken = generateToken(user._id.toString());
-        res.cookie("token", jwtToken, {
+        // Create access token
+        const accessToken = generateAccessToken(user._id.toString());
+        // Create refresh token
+        const refreshToken = generateRefreshToken(user._id.toString());
+        res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            // sameSite: "strict",
             maxAge: 7 * 24 * 60 * 60 * 1000,
         })
+
         return res.status(200).json({
             success: true,
             user: {
@@ -107,7 +116,7 @@ const loginUserController = asyncHandler(async (req: Request, res: Response) => 
                 username: user.username,
                 email: user.email,
             },
-            token: jwtToken,
+            accessToken: accessToken,
         })
     } else {
         return res.status(401).json({
@@ -117,12 +126,61 @@ const loginUserController = asyncHandler(async (req: Request, res: Response) => 
     }
 });
 
+// @desc Refresh access token
+// @route POST /refresh
+// @access Public
+const refreshTokenController = asyncHandler(async (req: Request, res: Response) => {
+    const token = req.cookies.refreshToken;
+    if (!token) {
+        return res.status(401).json({
+            success: false,
+            message: "No refresh token provided",
+        })
+    }
+
+    const decoded = verifyRefreshToken(token);
+    if (!decoded) {
+        return res.status(401).json({
+            success: false,
+            message: "Invalid refresh token",
+        })
+    }
+
+    const user = await User.findById(decoded.id);
+    if (!user) {
+        return res.status(401).json({
+            success: false,
+            message: "User not found",
+        })
+    }
+
+    const accessToken = generateAccessToken(user._id.toString());
+    const refreshToken = generateRefreshToken(user._id.toString());
+        res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            // sameSite: "strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        })
+
+    return res.status(200).json({
+        success: true,
+        accessToken: accessToken,
+    });
+});
+
 // @desc Logout a user
 // @route POST /logout
 // @access Private
 const logoutUserController = asyncHandler(async (_req: Request, res: Response) => {
-    res.clearCookie("token");
-    res.status(200).json({
+    res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        // sameSite: "strict",
+    });
+    return res.status(200).json({
         success: true,
         message: "User logged out successfully",
     });
@@ -159,4 +217,5 @@ export {
     loginUserController, // done
     logoutUserController, // done
     getCurrentUserProfileController, // done
+    refreshTokenController,
 };

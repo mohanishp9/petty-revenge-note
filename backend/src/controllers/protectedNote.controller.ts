@@ -298,10 +298,10 @@ const addReplyController = asyncHandler(async (req: Request, res: Response) => {
     );
 
     // Increment note's comments count
-    await Note.updateOne(
-        { _id: parentComment.noteId },
-        { $inc: { commentsCount: 1 } }
-    );
+    // await Note.updateOne(
+    //     { _id: parentComment.noteId },
+    //     { $inc: { commentsCount: 1 } }
+    // );
 
     res.status(201).json({
         success: true,
@@ -452,7 +452,7 @@ const deleteCommentController = asyncHandler(async (req, res) => {
 
     const { commentId } = parsed.data;
 
-    // First, find the comment to get its details
+    // Find the comment to get its details
     const comment = await Comment.findById(commentId);
     if (!comment) {
         return res.status(404).json({ message: "Comment not found" });
@@ -467,38 +467,36 @@ const deleteCommentController = asyncHandler(async (req, res) => {
     session.startTransaction();
 
     try {
-        let commentsCountDecrement = 1; // At minimum, decrement by 1 for the comment being deleted
 
-        // For parent comments, delete all its replies and count them
-        if (comment.parentCommentId === null) {
-            // This is a parent comment, count and delete all its replies
-            const childComments = await Comment.find({
-                parentCommentId: comment._id
-            }).session(session);
+        // CASE 1: Deleting a top-level parent comment
+        if (!comment.parentCommentId) {
 
-            commentsCountDecrement += childComments.length;
+            // Delete all nested replies linked to this parent comment
+            await Comment.deleteMany(
+                { parentCommentId: comment._id },
+                { session }
+            );
 
-            await Comment.deleteMany({
-                parentCommentId: comment._id
-            }).session(session);
+            // Since it's a top-level comment, decrement the note's commentsCount by exactly 1
+            await Note.updateOne(
+                { _id: comment.noteId },
+                { $inc: { commentsCount: -1 } },
+                { session }
+            );
+        }
+
+        // CASE 2: Deleting a nested reply
+        else {
+            // Update the parent comment's repliesCount tracking
+            await Comment.updateOne(
+                { _id: comment.parentCommentId },
+                { $inc: { repliesCount: -1 } },
+                { session }
+            );
         }
 
         // Delete the comment
-        await Comment.deleteOne({ _id: comment._id }).session(session);
-
-        // Update parent comment's repliesCount if it's a reply
-        if (comment.parentCommentId) {
-            await Comment.updateOne(
-                { _id: comment.parentCommentId },
-                { $inc: { repliesCount: -1 } }
-            ).session(session);
-        }
-
-        // Decrement the note's commentsCount
-        await Note.updateOne(
-            { _id: comment.noteId },
-            { $inc: { commentsCount: -commentsCountDecrement } }
-        ).session(session);
+        await Comment.deleteOne({ _id: comment._id }, { session });
 
         await session.commitTransaction();
 
@@ -508,7 +506,6 @@ const deleteCommentController = asyncHandler(async (req, res) => {
         });
     } catch (err) {
         await session.abortTransaction();
-        session.endSession();
         throw err;
     } finally {
         await session.endSession();

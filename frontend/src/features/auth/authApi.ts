@@ -27,3 +27,8 @@ export const getCurrentUserAPI = async () => {
     const res = await api.get("/auth/profile");
     return res.data;
 };
+
+export const refreshTokenAPI = async (): Promise<{ success: boolean; accessToken: string }> => {
+    const res = await api.post("/auth/refresh");
+    return res.data;
+};

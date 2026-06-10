@@ -5,14 +5,16 @@ export const api = axios.create({
     withCredentials: true,
 });
 
-// Attach token automatically
-api.interceptors.request.use((config) => {
-if (typeof window !== "undefined") {
-    const token = localStorage.getItem("token");
+let accessToken: string | null = null;
 
-    if (token && token !== "undefined" && token !== "null") {
-        config.headers.Authorization = `Bearer ${token}`;
+export const setAccessToken = (token: string | null) => {
+    accessToken = token;
+};
+
+api.interceptors.request.use((config) => {
+    if (accessToken) {
+        config.headers = config.headers ?? {};
+        config.headers.Authorization = `Bearer ${accessToken}`;
     }
-}
     return config;
 });
