@@ -5,18 +5,22 @@ import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { FileText, Mail, MessageCircle, NotebookPen, Plus, Trash2, UserRound, X } from "lucide-react";
 import { useAppDispatch } from "@/app/hook/dispatch";
-import { getCurrentUser, setUserFromStorage } from "@/features/auth/authSlice";
+import { getCurrentUser,
+    // setUserFromStorage
+} from "@/features/auth/authSlice";
 import { getNoteComments, resetComments } from "@/features/comments/commentsSlice";
 import type { CommentType } from "@/features/comments/types";
 import { createNote, resetCreateNote } from "@/features/createNote/createNoteSlice";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
-import { deleteNote, resetDeleteNote } from "@/features/deleteNote/deleteNoteSlice";
+import { deleteNote,
+    // resetDeleteNote
+} from "@/features/deleteNote/deleteNoteSlice";
 // import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 // import { deleteNote, resetDeleteNote } from "@/features/deleteNote/deleteNoteSlice";
 import { getMyNotes, resetMyNotes, removeNote } from "@/features/getMyNotes/getMyNotesSlice";
 import type { Note } from "@/features/publicNote/types";
 import type { RootState } from "@/store/store";
-import CommentItem from "@/components/CommentItem";
+// import CommentItem from "@/components/CommentItem";
 
 const NOTES_PER_PAGE = 12;
 const COMMENTS_PER_PAGE = 10;
