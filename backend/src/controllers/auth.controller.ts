@@ -1,75 +1,212 @@
 import { asyncHandler } from "../utils/asyncHandler";
-import { registerSchema, loginSchema } from "../utils/validation";
-import type { RegisterInput, LoginInput } from "../utils/validation";
+import { registerSchema, loginSchema, verifyOtpSchema } from "../utils/validation";
+import type { RegisterInput, LoginInput, VerifyOtpInput } from "../utils/validation";
 import User from "../models/User.model";
 import Note from "../models/Note.model";
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "../utils/jwt";
+import { generateOtp, hashOtp, verifyOtp } from "../utils/otpUtils";
+import { sendOtpEmail } from "../services/emailService";
+import redisClient from "../config/redis";
 import type { Request, Response } from "express";
 
-// @desc Create a new user
-// @route POST /register
-// @access Public
-const registerUserController = asyncHandler(async (req: Request, res: Response) => {
-    const result = registerSchema.safeParse(req.body);
+// Redis Key Helper
+const otpRedisKey = (email: string) => `auth:register:${email.toLowerCase().trim()}`;
 
+// Redis Payload Type
+interface OtpRegisterPayload {
+    otpHash: string;
+    attempts: number;
+    userData: {
+        username: string;
+        email: string;
+        password: string; // plain — User model pre-save hook will hash it
+    };
+}
+
+// OTP Registration Controllers
+
+// @desc  Step 1 — Validate user data, generate OTP, store payload in Redis, send email
+// @route POST /auth/register/initiate
+// @access Public
+const initiateRegistration = asyncHandler(async (req: Request, res: Response) => {
+    // 1. Validate input
+    const result = registerSchema.safeParse(req.body);
     if (!result.success) {
         return res.status(400).json({
             success: false,
             message: result.error.issues.map((i: any) => i.message).join(", "),
         });
     }
-    const validatedData = result.data;
 
-    const { username, email, password }: RegisterInput = validatedData;
+    const { username, email, password }: RegisterInput = result.data;
 
-    const userExist = await User.findOne({
-        $or: [{ email }, { username }]
-    })
-
+    // 2. Check if email or username already registered in DB
+    const userExist = await User.findOne({ $or: [{ email }, { username }] });
     if (userExist) {
         return res.status(409).json({
             success: false,
-            message:
-                userExist.email === email
-                    ? "Email already registered"
-                    : "Username already taken",
+            message: userExist.email === email ? "Email already registered" : "Username already taken",
         });
     }
 
-    const user = await User.create({
-        username, // done
-        email, // done
-        password, // done
-    })
+    // 3. Generate OTP and hash it
+    const plainOtp = generateOtp();
+    const otpHash = await hashOtp(plainOtp);
 
-    if (user) {
-        // Create access token
-        const accessToken = generateAccessToken(user._id.toString());
-        // Create refresh token
-        const refreshToken = generateRefreshToken(user._id.toString());
-        res.cookie("refreshToken", refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-            // sameSite: "strict",
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-        })
+    // 4. Build Redis payload — store plain password so User model pre-save hook can hash it
+    const payload: OtpRegisterPayload = {
+        otpHash,
+        attempts: 0,
+        userData: { username, email, password },
+    };
 
-        return res.status(201).json({
-            success: true,
-            user: {
-                _id: user._id,
-                username: user.username,
-                email: user.email,
-            },
-            accessToken: accessToken,
-        })
-    } else {
+    // 5. Save to Redis with 10-min TTL — overwrites any previous OTP for this email (uniqueness guaranteed)
+    await redisClient.set(otpRedisKey(email), JSON.stringify(payload), "EX", 600);
+
+    // 6. Send OTP email (throws on total failure after retries)
+    await sendOtpEmail(email, plainOtp, "REGISTER");
+
+    return res.status(200).json({
+        success: true,
+        message: "OTP sent to your email. It expires in 10 minutes.",
+    });
+});
+
+// @desc  Resend OTP — generate fresh OTP, keep existing userData, reset TTL
+// @route POST /auth/register/resend
+// @access Public
+const resendOtp = asyncHandler(async (req: Request, res: Response) => {
+    const { email } = req.body;
+
+    if (!email || typeof email !== "string") {
+        return res.status(400).json({ success: false, message: "Email is required." });
+    }
+
+    // 1. Retrieve existing Redis payload to preserve userData
+    const raw = await redisClient.get(otpRedisKey(email));
+    if (!raw) {
         return res.status(400).json({
             success: false,
-            message: "Invalid user data",
+            message: "No pending registration found. Please start registration again.",
         });
     }
+
+    const existing: OtpRegisterPayload = JSON.parse(raw);
+
+    // 2. Generate a fresh OTP
+    const plainOtp = generateOtp();
+    const otpHash = await hashOtp(plainOtp);
+
+    // 3. Build updated payload — keep userData, reset attempts
+    const updatedPayload: OtpRegisterPayload = {
+        otpHash,
+        attempts: 0,
+        userData: existing.userData,
+    };
+
+    // 4. Overwrite Redis key with fresh OTP + reset TTL to 10 min
+    await redisClient.set(otpRedisKey(email), JSON.stringify(updatedPayload), "EX", 600);
+
+    // 5. Send new OTP email
+    await sendOtpEmail(email, plainOtp, "REGISTER");
+
+    return res.status(200).json({
+        success: true,
+        message: "New OTP sent to your email.",
+    });
+});
+
+// @desc  Step 2 — Verify OTP, create user, issue tokens
+// @route POST /auth/register/verify
+// @access Public
+const verifyRegistrationOtp = asyncHandler(async (req: Request, res: Response) => {
+    // 1. Validate input
+    const result = verifyOtpSchema.safeParse(req.body);
+    if (!result.success) {
+        return res.status(400).json({
+            success: false,
+            message: result.error.issues.map((i: any) => i.message).join(", "),
+        });
+    }
+
+    const { email, otp }: VerifyOtpInput = result.data;
+    const key = otpRedisKey(email);
+
+    // 2. Fetch Redis payload
+    const raw = await redisClient.get(key);
+    if (!raw) {
+        // Redis TTL expired or key never existed
+        return res.status(400).json({
+            success: false,
+            message: "OTP expired or invalid. Please request a new one.",
+        });
+    }
+
+    const payload: OtpRegisterPayload = JSON.parse(raw);
+
+    // 3. Attempt limit check — max 5 wrong attempts
+    if (payload.attempts >= 5) {
+        await redisClient.del(key); // clean up — force user to restart
+        return res.status(429).json({
+            success: false,
+            message: "Maximum attempts exceeded. Please request a new OTP.",
+        });
+    }
+
+    // 4. Verify OTP hash
+    const isValid = await verifyOtp(otp, payload.otpHash);
+    if (!isValid) {
+        // Increment attempts and persist back with remaining TTL
+        const ttl = await redisClient.ttl(key); // get remaining seconds
+        payload.attempts += 1;
+        const remainingTtl = ttl > 0 ? ttl : 600;
+        await redisClient.set(key, JSON.stringify(payload), "EX", remainingTtl);
+
+        const attemptsLeft = 5 - payload.attempts;
+        return res.status(400).json({
+            success: false,
+            message: `Invalid OTP. ${attemptsLeft} attempt${attemptsLeft === 1 ? "" : "s"} remaining.`,
+        });
+    }
+
+    // 5. OTP valid — create user (pre-save hook in User model will hash the password)
+    const { username, email: userEmail, password } = payload.userData;
+
+    // Double-check: race condition guard — ensure user wasn't created between initiate and verify
+    const alreadyExists = await User.findOne({ $or: [{ email: userEmail }, { username }] });
+    if (alreadyExists) {
+        await redisClient.del(key);
+        return res.status(409).json({
+            success: false,
+            message: alreadyExists.email === userEmail ? "Email already registered" : "Username already taken",
+        });
+    }
+
+    const user = await User.create({ username, email: userEmail, password });
+
+    // 6. Cleanup Redis key immediately
+    await redisClient.del(key);
+
+    // 7. Issue tokens — same pattern as existing login
+    const accessToken = generateAccessToken(user._id.toString());
+    const refreshToken = generateRefreshToken(user._id.toString());
+
+    res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.status(201).json({
+        success: true,
+        user: {
+            _id: user._id,
+            username: user.username,
+            email: user.email,
+        },
+        accessToken,
+    });
 });
 
 // @desc Login a user
@@ -213,9 +350,11 @@ const getCurrentUserProfileController = asyncHandler(async (req: Request, res: R
 });
 
 export {
-    registerUserController, // done
-    loginUserController, // done
-    logoutUserController, // done
-    getCurrentUserProfileController, // done
+    initiateRegistration,
+    resendOtp,
+    verifyRegistrationOtp,
+    loginUserController,
+    logoutUserController,
+    getCurrentUserProfileController,
     refreshTokenController,
 };

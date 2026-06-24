@@ -35,7 +35,11 @@ const Navbar = () => {
     const { accessToken, loading, error } = useSelector((state: RootState) => state.auth);
 
     useEffect(() => {
-        if (error) { toast.error(error); dispatch(clearError()); }
+        if (error) {
+            const msg = typeof error === "string" ? error : error.message;
+            toast.error(msg);
+            dispatch(clearError());
+        }
     }, [dispatch, error]);
 
     const isLoggedIn = Boolean(accessToken);

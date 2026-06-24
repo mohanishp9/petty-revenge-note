@@ -11,5 +11,11 @@ export const loginSchema = z.object({
     password: z.string().min(6, { message: "Password must have at least 6 characters" }),
 });
 
+export const verifyOtpSchema = z.object({
+    email: z.string().email({ message: "Invalid email" }),
+    otp: z.string().length(6, { message: "OTP must be exactly 6 digits" }).regex(/^\d+$/, { message: "OTP must be numeric" }),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type VerifyOtpInput = z.infer<typeof verifyOtpSchema>;
