@@ -9,12 +9,27 @@ export const loginAPI = async (data: {
     return res.data;
 };
 
-export const registerAPI = async (data: {
+export const initiateRegistrationAPI = async (data: {
     username: string;
     email: string;
     password: string;
+}): Promise<{ success: boolean; message: string }> => {
+    const res = await api.post("/auth/register/initiate", data);
+    return res.data;
+};
+
+export const verifyRegistrationOtpAPI = async (data: {
+    email: string;
+    otp: string;
 }): Promise<AuthResponse> => {
-    const res = await api.post("/auth/register", data);
+    const res = await api.post("/auth/register/verify", data);
+    return res.data;
+};
+
+export const resendOtpAPI = async (data: {
+    email: string;
+}): Promise<{ success: boolean; message: string }> => {
+    const res = await api.post("/auth/register/resend", data);
     return res.data;
 };
 

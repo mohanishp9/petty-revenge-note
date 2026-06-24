@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { loginAPI, logoutAPI, registerAPI, getCurrentUserAPI, refreshTokenAPI } from "@/features/auth/authApi";
-import { AuthState } from "./types";
-import { getErrorMessage } from "@/utils/getErrorMessage";
+import { loginAPI, logoutAPI, initiateRegistrationAPI, verifyRegistrationOtpAPI, resendOtpAPI, getCurrentUserAPI, refreshTokenAPI } from "@/features/auth/authApi";
+import { AuthState, OtpError } from "./types";
+import { getErrorMessage, getErrorStatus } from "@/utils/getErrorMessage";
 
 export const initialState: AuthState = {
     user: null,
@@ -34,14 +34,55 @@ export const loginUser = createAsyncThunk(
     }
 );
 
-export const registerUser = createAsyncThunk(
-    "auth/register",
+export const initiateRegistration = createAsyncThunk(
+    "auth/initiateRegistration",
     async (data: { username: string; email: string; password: string }, thunkAPI) => {
         try {
-            const res = await registerAPI(data);
+            const res = await initiateRegistrationAPI(data);
+            // Save pending email to localStorage so refresh doesn't lose step 2 context
+            if (typeof window !== "undefined") {
+                localStorage.setItem("registration_pending_email", data.email);
+            }
             return res;
         } catch (err) {
-            return thunkAPI.rejectWithValue(getErrorMessage(err));
+            return thunkAPI.rejectWithValue({
+                message: getErrorMessage(err),
+                status: getErrorStatus(err),
+            } satisfies OtpError);
+        }
+    }
+);
+
+export const verifyRegistrationOtp = createAsyncThunk(
+    "auth/verifyRegistrationOtp",
+    async (data: { email: string; otp: string }, thunkAPI) => {
+        try {
+            const res = await verifyRegistrationOtpAPI(data);
+            // Clear pending state on success
+            if (typeof window !== "undefined") {
+                localStorage.removeItem("registration_pending_email");
+            }
+            return res;
+        } catch (err) {
+            return thunkAPI.rejectWithValue({
+                message: getErrorMessage(err),
+                status: getErrorStatus(err),
+            } satisfies OtpError);
+        }
+    }
+);
+
+export const resendOtp = createAsyncThunk(
+    "auth/resendOtp",
+    async (data: { email: string }, thunkAPI) => {
+        try {
+            const res = await resendOtpAPI(data);
+            return res;
+        } catch (err) {
+            return thunkAPI.rejectWithValue({
+                message: getErrorMessage(err),
+                status: getErrorStatus(err),
+            } satisfies OtpError);
         }
     }
 );
@@ -107,18 +148,42 @@ const authSlice = createSlice({
                 state.error = action.payload as string;
             })
 
-            .addCase(registerUser.pending, (state) => {
+            .addCase(initiateRegistration.pending, (state) => {
                 state.loading = true;
                 state.error = null;
             })
-            .addCase(registerUser.fulfilled, (state, action) => {
+            .addCase(initiateRegistration.fulfilled, (state) => {
+                state.loading = false;
+            })
+            .addCase(initiateRegistration.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as OtpError;
+            })
+
+            .addCase(verifyRegistrationOtp.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(verifyRegistrationOtp.fulfilled, (state, action) => {
                 state.loading = false;
                 state.user = action.payload.user;
                 state.accessToken = action.payload.accessToken;
             })
-            .addCase(registerUser.rejected, (state, action) => {
+            .addCase(verifyRegistrationOtp.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload as string;
+                state.error = action.payload as OtpError;
+            })
+
+            .addCase(resendOtp.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(resendOtp.fulfilled, (state) => {
+                state.loading = false;
+            })
+            .addCase(resendOtp.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as OtpError;
             })
             .addCase(logoutUser.pending, (state) => {
                 state.loading = true;

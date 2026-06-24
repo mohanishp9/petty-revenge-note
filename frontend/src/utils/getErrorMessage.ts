@@ -1,5 +1,6 @@
 type AxiosLikeError = {
     response?: {
+        status?: number;
         data?: {
             message?: string;
         };
@@ -13,7 +14,6 @@ export const getErrorMessage = (err: unknown): string => {
         "response" in err
     ) {
         const error = err as AxiosLikeError;
-
         return error.response?.data?.message || "Something went wrong";
     }
 
@@ -23,3 +23,15 @@ export const getErrorMessage = (err: unknown): string => {
 
     return "Something went wrong";
 };
+
+export const getErrorStatus = (err: unknown): number => {
+    if (
+        typeof err === "object" &&
+        err !== null &&
+        "response" in err
+    ) {
+        const error = err as AxiosLikeError;
+        return error.response?.status ?? 500;
+    }
+    return 500;
+};

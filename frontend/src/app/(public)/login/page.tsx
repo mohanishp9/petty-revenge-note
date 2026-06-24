@@ -29,7 +29,8 @@ const Login = () => {
     // ❌ Show error properly
     useEffect(() => {
         if (error) {
-            toast.error(error);
+            const msg = typeof error === "string" ? error : error.message;
+            toast.error(msg);
             dispatch(clearError());
         }
     }, [error, dispatch]);
