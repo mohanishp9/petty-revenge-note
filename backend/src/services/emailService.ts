@@ -1,4 +1,9 @@
 import nodemailer from 'nodemailer';
+import dns from 'node:dns';
+
+// Force Node.js to resolve IPv4 addresses first. 
+// Fixes ENETUNREACH errors on Render/Alpine Linux where IPv6 is not properly routed.
+dns.setDefaultResultOrder('ipv4first');
 
 // Types
 export type OtpEmailType = 'REGISTER' | 'PASSWORD_RESET' | 'EMAIL_CHANGE';
@@ -56,7 +61,9 @@ const buildEmailTemplate = (otp: string, type: OtpEmailType): EmailTemplate => {
 
 const createTransporter = () => {
   return nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: {
       type: 'OAuth2',
       user: process.env.GOOGLE_EMAIL_USER,
