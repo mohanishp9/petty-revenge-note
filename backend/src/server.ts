@@ -11,6 +11,10 @@ import protectedNoteRoutes from "./routes/protectedNote.route"
 dotenv.config();
 
 const app: Application = express();
+
+// Required by express-rate-limit when deploying behind a proxy like Render
+app.set('trust proxy', 1);
+
 const PORT = process.env.PORT || 3001;
 
 app.use(express.json());
