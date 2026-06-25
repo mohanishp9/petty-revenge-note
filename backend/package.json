@@ -24,6 +24,7 @@
     "mongoose": "^9.3.1",
     "nodemailer": "^9.0.0",
     "rate-limit-redis": "^5.0.0",
+    "resend": "^6.14.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

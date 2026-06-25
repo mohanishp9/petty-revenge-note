@@ -1,9 +1,4 @@
-import nodemailer from 'nodemailer';
-import dns from 'node:dns';
-
-// Force Node.js to resolve IPv4 addresses first. 
-// Fixes ENETUNREACH errors on Render/Alpine Linux where IPv6 is not properly routed.
-dns.setDefaultResultOrder('ipv4first');
+import { Resend } from 'resend';
 
 // Types
 export type OtpEmailType = 'REGISTER' | 'PASSWORD_RESET' | 'EMAIL_CHANGE';
@@ -14,7 +9,6 @@ interface EmailTemplate {
 }
 
 // Template Builder
-
 const buildEmailTemplate = (otp: string, type: OtpEmailType): EmailTemplate => {
   const templates: Record<OtpEmailType, EmailTemplate> = {
     REGISTER: {
@@ -55,36 +49,22 @@ const buildEmailTemplate = (otp: string, type: OtpEmailType): EmailTemplate => {
   return templates[type];
 };
 
-// Transporter Factory
-// Create a fresh transporter each call — OAuth2 access tokens expire,
-// so re-creating forces nodemailer to fetch a fresh token every time.
-
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    family: 4, // forces IPv4, bypassing all OS/Render IPv6 bugs
-    auth: {
-      type: 'OAuth2',
-      user: process.env.GOOGLE_EMAIL_USER,
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
-    },
-  } as any);
-};
-
-// Core Send Function (single attempt)
-
+// Core Send Function — uses Resend HTTP API (not SMTP, works on all hosting providers)
 const trySendEmail = async (toEmail: string, template: EmailTemplate): Promise<void> => {
-  const transporter = createTransporter();
-  await transporter.sendMail({
-    from: `"Petty Revenge Notes" <${process.env.GOOGLE_EMAIL_USER}>`,
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
+  const { error } = await resend.emails.send({
+    // Use your verified domain here. For testing without a domain, Resend allows onboarding@resend.dev
+    // but it can only send to the account's own email address.
+    from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
     to: toEmail,
     subject: template.subject,
     html: template.html,
   });
+
+  if (error) {
+    throw new Error(error.message);
+  }
 };
 
 // Public API
@@ -123,7 +103,7 @@ export const sendOtpEmail = async (
       );
 
       if (attempt <= MAX_RETRIES) {
-        await sleep(RETRY_DELAY_MS * attempt); // exponential-ish back-off
+        await sleep(RETRY_DELAY_MS * attempt);
       }
     }
   }
