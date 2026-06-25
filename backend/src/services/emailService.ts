@@ -1,4 +1,4 @@
-import { Resend } from 'resend';
+import { BrevoClient } from '@getbrevo/brevo';
 
 // Types
 export type OtpEmailType = 'REGISTER' | 'PASSWORD_RESET' | 'EMAIL_CHANGE';
@@ -49,22 +49,19 @@ const buildEmailTemplate = (otp: string, type: OtpEmailType): EmailTemplate => {
   return templates[type];
 };
 
-// Core Send Function — uses Resend HTTP API (not SMTP, works on all hosting providers)
+// Core Send Function — uses Brevo HTTP API (no SMTP, works on Render and all hosting providers)
 const trySendEmail = async (toEmail: string, template: EmailTemplate): Promise<void> => {
-  const resend = new Resend(process.env.RESEND_API_KEY);
+  const client = new BrevoClient({ apiKey: process.env.BREVO_API_KEY! });
 
-  const { error } = await resend.emails.send({
-    // Use your verified domain here. For testing without a domain, Resend allows onboarding@resend.dev
-    // but it can only send to the account's own email address.
-    from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
-    to: toEmail,
+  await client.transactionalEmails.sendTransacEmail({
     subject: template.subject,
-    html: template.html,
+    htmlContent: template.html,
+    sender: {
+      name: 'Petty Revenge Notes',
+      email: process.env.BREVO_FROM_EMAIL!,
+    },
+    to: [{ email: toEmail }],
   });
-
-  if (error) {
-    throw new Error(error.message);
-  }
 };
 
 // Public API
