@@ -64,6 +64,8 @@ const createTransporter = () => {
     host: 'smtp.gmail.com',
     port: 465,
     secure: true,
+    // @ts-ignore - 'family' is a valid net.connect option that forces IPv4
+    family: 4,
     auth: {
       type: 'OAuth2',
       user: process.env.GOOGLE_EMAIL_USER,
