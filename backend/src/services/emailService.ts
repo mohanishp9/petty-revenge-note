@@ -64,8 +64,7 @@ const createTransporter = () => {
     host: 'smtp.gmail.com',
     port: 465,
     secure: true,
-    // @ts-ignore - 'family' is a valid net.connect option that forces IPv4
-    family: 4,
+    family: 4, // forces IPv4, bypassing all OS/Render IPv6 bugs
     auth: {
       type: 'OAuth2',
       user: process.env.GOOGLE_EMAIL_USER,
@@ -73,7 +72,7 @@ const createTransporter = () => {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
     },
-  });
+  } as any);
 };
 
 // Core Send Function (single attempt)
