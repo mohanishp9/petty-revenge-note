@@ -12,6 +12,7 @@ import { AppDispatch, RootState } from "@/store/store";
 import { OtpError } from "@/features/auth/types";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { Eye, EyeOff } from "lucide-react";
 import OTPInput from "@/components/OTPInput";
 import ResendTimer from "@/components/ResendTimer";
 
@@ -75,6 +76,7 @@ const Register = () => {
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
 
     // Step 2 OTP
     const [otpDigits, setOtpDigits] = useState<string[]>(Array(6).fill(""));
@@ -378,16 +380,27 @@ const Register = () => {
                                 <label className="font-special-elite" htmlFor="password" style={labelStyle}>
                                     Secret Passphrase
                                 </label>
-                                <input
-                                    type="password"
-                                    id="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="known only to you..."
-                                    disabled={loading}
-                                    className="font-crimson"
-                                    style={inputStyle}
-                                />
+                                <div className="relative">
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        id="password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="known only to you..."
+                                        disabled={loading}
+                                        className="font-crimson"
+                                        style={inputStyle}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-[#7a5a22] hover:text-[#502d0a] transition-colors flex items-center justify-center"
+                                        tabIndex={-1}
+                                        title={showPassword ? "Hide password" : "Show password"}
+                                    >
+                                        {showPassword ? <EyeOff size={16} strokeWidth={1.5} /> : <Eye size={16} strokeWidth={1.5} />}
+                                    </button>
+                                </div>
                             </div>
 
                             <button
