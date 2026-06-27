@@ -86,8 +86,8 @@ function CommentsPanel({
     comments,
     commentsLoading,
     commentsHasMore,
-    isLoggedIn,
-    currentUser,
+    isLoggedIn: _isLoggedIn,
+    currentUser: _currentUser,
     onClose,
     onLoadMore,
 }: {
@@ -96,6 +96,7 @@ function CommentsPanel({
     commentsLoading: boolean;
     commentsHasMore: boolean;
     isLoggedIn: boolean;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     currentUser: any | null;
     onClose: () => void;
     onLoadMore: () => void;

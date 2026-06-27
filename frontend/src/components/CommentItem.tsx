@@ -9,6 +9,7 @@ import type { CommentType } from "@/features/comments/types";
 interface CommentItemProps {
     comment: CommentType;
     isLoggedIn: boolean;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     currentUser: any;
     onReplyClick?: (commentId: string) => void;
     replyingTo?: string | null;

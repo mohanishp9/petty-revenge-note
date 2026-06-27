@@ -6,6 +6,7 @@ import { loginUser, clearError } from "@/features/auth/authSlice";
 import type { AppDispatch, RootState } from "@/store/store";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { Eye, EyeOff } from "lucide-react";
 
 const Login = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -13,6 +14,7 @@ const Login = () => {
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
 
     const { loading, error, user } = useSelector(
         (state: RootState) => state.auth
@@ -138,20 +140,31 @@ const Login = () => {
                             <label className="font-special-elite" htmlFor="password" style={{ display: "block", fontSize: 11, color: "#7a5a22", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "0.3rem" }}>
                                 Secret Passphrase
                             </label>
-                            <input
-                                type="password"
-                                id="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="known only to you..."
-                                className="font-crimson"
-                                style={{
-                                    width: "100%", background: "transparent", border: "none",
-                                    borderBottom: "1.5px solid rgba(80,45,10,0.45)", borderRadius: 0,
-                                    padding: "0.3rem 0.1rem 0.4rem",
-                                    fontSize: 17, color: "#1c0f02", outline: "none"
-                                }}
-                            />
+                            <div className="relative">
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    id="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="known only to you..."
+                                    className="font-crimson"
+                                    style={{
+                                        width: "100%", background: "transparent", border: "none",
+                                        borderBottom: "1.5px solid rgba(80,45,10,0.45)", borderRadius: 0,
+                                        padding: "0.3rem 0.1rem 0.4rem", paddingRight: "2rem",
+                                        fontSize: 17, color: "#1c0f02", outline: "none"
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-[#7a5a22] hover:text-[#502d0a] transition-colors flex items-center justify-center"
+                                    tabIndex={-1}
+                                    title={showPassword ? "Hide password" : "Show password"}
+                                >
+                                    {showPassword ? <EyeOff size={16} strokeWidth={1.5} /> : <Eye size={16} strokeWidth={1.5} />}
+                                </button>
+                            </div>
                         </div>
 
                         {/* Submit */}

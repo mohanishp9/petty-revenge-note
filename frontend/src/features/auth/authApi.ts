@@ -47,3 +47,30 @@ export const refreshTokenAPI = async (): Promise<{ success: boolean; accessToken
     const res = await api.post("/auth/refresh");
     return res.data;
 };
+
+// --- Profile Management ---
+
+export const checkUsernameAPI = async (username: string): Promise<{ success: boolean; available: boolean }> => {
+    const res = await api.get(`/users/profile/check-username?username=${encodeURIComponent(username)}`);
+    return res.data;
+};
+
+export const updateUsernameAPI = async (data: { username: string }) => {
+    const res = await api.put("/users/profile/username", data);
+    return res.data; // { success: true, user: User, message: string }
+};
+
+export const updatePasswordAPI = async (data: { currentPassword: string; newPassword: string }) => {
+    const res = await api.put("/users/profile/password", data);
+    return res.data;
+};
+
+export const initiateEmailUpdateAPI = async (data: { newEmail: string; password: string }) => {
+    const res = await api.post("/users/profile/email/initiate", data);
+    return res.data;
+};
+
+export const verifyEmailUpdateAPI = async (data: { otp: string }) => {
+    const res = await api.post("/users/profile/email/verify", data);
+    return res.data; // { success: true, user: User, message: string }
+};

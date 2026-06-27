@@ -1,8 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { deleteNoteAPI } from "./deleteNoteApi";
 import { getErrorMessage } from "@/utils/getErrorMessage";
-import type { RootState } from "@/store/store";
-import type { Note } from "@/features/publicNote/types";
 
 interface DeleteNoteState {
     loading: boolean;

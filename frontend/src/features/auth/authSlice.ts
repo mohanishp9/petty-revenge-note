@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { loginAPI, logoutAPI, initiateRegistrationAPI, verifyRegistrationOtpAPI, resendOtpAPI, getCurrentUserAPI, refreshTokenAPI } from "@/features/auth/authApi";
+import { loginAPI, logoutAPI, initiateRegistrationAPI, verifyRegistrationOtpAPI, resendOtpAPI, getCurrentUserAPI, refreshTokenAPI, updateUsernameAPI, updatePasswordAPI, verifyEmailUpdateAPI } from "@/features/auth/authApi";
 import { AuthState, OtpError } from "./types";
 import { getErrorMessage, getErrorStatus } from "@/utils/getErrorMessage";
 
@@ -111,6 +111,44 @@ export const getCurrentUser = createAsyncThunk(
     }
 );
 
+// --- Profile Management ---
+
+export const updateUsername = createAsyncThunk(
+    "auth/updateUsername",
+    async (data: { username: string }, thunkAPI) => {
+        try {
+            const res = await updateUsernameAPI(data);
+            return res; // { success: true, user: User, message: string }
+        } catch (err) {
+            return thunkAPI.rejectWithValue(getErrorMessage(err));
+        }
+    }
+);
+
+export const updatePassword = createAsyncThunk(
+    "auth/updatePassword",
+    async (data: { currentPassword: string; newPassword: string }, thunkAPI) => {
+        try {
+            const res = await updatePasswordAPI(data);
+            return res;
+        } catch (err) {
+            return thunkAPI.rejectWithValue(getErrorMessage(err));
+        }
+    }
+);
+
+export const verifyEmailUpdate = createAsyncThunk(
+    "auth/verifyEmailUpdate",
+    async (data: { otp: string }, thunkAPI) => {
+        try {
+            const res = await verifyEmailUpdateAPI(data);
+            return res; // { success: true, user: User, message: string }
+        } catch (err) {
+            return thunkAPI.rejectWithValue(getErrorMessage(err));
+        }
+    }
+);
+
 const authSlice = createSlice({
     name: "auth",
     initialState,
@@ -210,6 +248,49 @@ const authSlice = createSlice({
                 state.loading = false;
                 state.user = null;
                 state.accessToken = null;
+            })
+            
+            // --- Profile Management ---
+            .addCase(updateUsername.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(updateUsername.fulfilled, (state, action) => {
+                state.loading = false;
+                if (state.user) {
+                    state.user = action.payload.user; // Update global user state
+                }
+            })
+            .addCase(updateUsername.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            })
+
+            .addCase(verifyEmailUpdate.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(verifyEmailUpdate.fulfilled, (state, action) => {
+                state.loading = false;
+                if (state.user) {
+                    state.user = action.payload.user; // Update global user state
+                }
+            })
+            .addCase(verifyEmailUpdate.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string; // Usually contains attempts logic message
+            })
+
+            .addCase(updatePassword.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(updatePassword.fulfilled, (state) => {
+                state.loading = false;
+            })
+            .addCase(updatePassword.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
             });
     },
 });

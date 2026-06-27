@@ -36,7 +36,8 @@ export const otpRequestLimiter = rateLimit({
   keyGenerator: (req: Request): string => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const ip = ipKeyGenerator(req as any);
-    const email = (req.body?.email as string | undefined)?.toLowerCase().trim() ?? 'unknown';
+    const emailField = req.body?.email || req.body?.newEmail;
+    const email = (emailField as string | undefined)?.toLowerCase().trim() ?? 'unknown';
     return `otp_req:${ip}:${email}`;
   },
 

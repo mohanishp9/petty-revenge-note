@@ -155,32 +155,63 @@ const Navbar = () => {
                     )}
                 </nav>
 
-                {/* Profile button */}
-                <Link
-                    href="/profile"
-                    aria-label="Profile"
-                    className="flex items-center justify-center transition"
-                    style={{
-                        width: 42,
-                        height: 42,
-                        borderRadius: 3,
-                        background: "rgba(240,220,160,0.5)",
-                        border: "1px solid rgba(120,80,20,0.25)",
-                        color: "#6a4515",
-                        cursor: "pointer",
-                        flexShrink: 0,
-                    }}
-                    onMouseEnter={e => {
-                        (e.currentTarget as HTMLElement).style.background = "rgba(120,80,20,0.1)";
-                        (e.currentTarget as HTMLElement).style.borderColor = "rgba(120,80,20,0.4)";
-                    }}
-                    onMouseLeave={e => {
-                        (e.currentTarget as HTMLElement).style.background = "rgba(240,220,160,0.5)";
-                        (e.currentTarget as HTMLElement).style.borderColor = "rgba(120,80,20,0.25)";
-                    }}
-                >
-                    <ShieldUser style={{ width: 18, height: 18 }} />
-                </Link>
+                <div className="flex gap-2">
+                    {/* Settings button (only if logged in) */}
+                    {isLoggedIn && (
+                        <Link
+                            href="/settings"
+                            aria-label="Settings"
+                            className="flex items-center justify-center transition"
+                            style={{
+                                width: 42,
+                                height: 42,
+                                borderRadius: 3,
+                                background: "rgba(240,220,160,0.5)",
+                                border: "1px solid rgba(120,80,20,0.25)",
+                                color: "#6a4515",
+                                cursor: "pointer",
+                                flexShrink: 0,
+                            }}
+                            onMouseEnter={e => {
+                                (e.currentTarget as HTMLElement).style.background = "rgba(120,80,20,0.1)";
+                                (e.currentTarget as HTMLElement).style.borderColor = "rgba(120,80,20,0.4)";
+                            }}
+                            onMouseLeave={e => {
+                                (e.currentTarget as HTMLElement).style.background = "rgba(240,220,160,0.5)";
+                                (e.currentTarget as HTMLElement).style.borderColor = "rgba(120,80,20,0.25)";
+                            }}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </Link>
+                    )}
+
+                    {/* Profile button */}
+                    <Link
+                        href="/profile"
+                        aria-label="Profile"
+                        className="flex items-center justify-center transition"
+                        style={{
+                            width: 42,
+                            height: 42,
+                            borderRadius: 3,
+                            background: "rgba(240,220,160,0.5)",
+                            border: "1px solid rgba(120,80,20,0.25)",
+                            color: "#6a4515",
+                            cursor: "pointer",
+                            flexShrink: 0,
+                        }}
+                        onMouseEnter={e => {
+                            (e.currentTarget as HTMLElement).style.background = "rgba(120,80,20,0.1)";
+                            (e.currentTarget as HTMLElement).style.borderColor = "rgba(120,80,20,0.4)";
+                        }}
+                        onMouseLeave={e => {
+                            (e.currentTarget as HTMLElement).style.background = "rgba(240,220,160,0.5)";
+                            (e.currentTarget as HTMLElement).style.borderColor = "rgba(120,80,20,0.25)";
+                        }}
+                    >
+                        <ShieldUser style={{ width: 18, height: 18 }} />
+                    </Link>
+                </div>
 
             </div>
         </header>
