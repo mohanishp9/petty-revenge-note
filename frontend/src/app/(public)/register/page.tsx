@@ -91,6 +91,7 @@ const Register = () => {
         if (typeof window !== "undefined") {
             const saved = localStorage.getItem(LS_KEY);
             if (saved) {
+                // eslint-disable-next-line react-hooks/set-state-in-effect
                 setPendingEmail(saved);
                 setStep(2);
             }
@@ -131,6 +132,7 @@ const Register = () => {
                         // OTP TTL hit in Redis
                         toast.error("OTP expired. Please start registration again.");
                         clearPendingRegistration();
+                        // eslint-disable-next-line react-hooks/set-state-in-effect
                         setStep(1);
                         setOtpDigits(Array(6).fill(""));
                     } else {

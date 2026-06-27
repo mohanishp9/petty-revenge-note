@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+
 
 interface DeleteConfirmationModalProps {
   isOpen: boolean;
@@ -43,7 +43,7 @@ const DeleteConfirmationModal = ({
             {noteSubject && (
               <div className="my-4 p-3 rounded-sm" style={{ background: "rgba(255,249,236,0.76)", borderColor: "rgba(120,80,20,0.16)" }}>
                 <p className="font-crimson text-[15px] leading-7" style={{ color: "#3a2008" }}>
-                  "{noteSubject}"
+                  &quot;{noteSubject}&quot;
                 </p>
               </div>
             )}

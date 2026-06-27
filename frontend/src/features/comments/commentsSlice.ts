@@ -74,10 +74,12 @@ export const deleteComment = createAsyncThunk(
     async (params: DeleteCommentParams, thunkAPI) => {
         try {
             // try to find the comment and compute removed count before deleting
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const state: any = thunkAPI.getState();
             let noteId: string | undefined = undefined;
             let removedCount = 1;
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const comments: any[] = state.comments?.comments || [];
 
             const topIndex = comments.findIndex((c) => c._id === params.commentId);
@@ -88,6 +90,7 @@ export const deleteComment = createAsyncThunk(
             } else {
                 for (const c of comments) {
                     if (c.replies) {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         const replyIndex = c.replies.findIndex((r: any) => r._id === params.commentId);
                         if (replyIndex !== -1) {
                             noteId = c.noteId;
@@ -218,7 +221,7 @@ const commentsSlice = createSlice({
                 }
             })
             .addCase(deleteComment.fulfilled, (state, action) => {
-                const { commentId: deletedCommentId, noteId, removedCount } = action.payload as {
+                const { commentId: deletedCommentId, noteId: _noteId, removedCount } = action.payload as {
                     commentId: string;
                     noteId?: string;
                     removedCount: number;
@@ -228,7 +231,6 @@ const commentsSlice = createSlice({
                 const commentIndex = state.comments.findIndex((c) => c._id === deletedCommentId);
 
                 if (commentIndex !== -1) {
-                    const comment = state.comments[commentIndex];
                     state.comments.splice(commentIndex, 1);
                     state.total -= removedCount;
                 } else {

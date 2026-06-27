@@ -62,7 +62,7 @@ export default function Settings() {
         try {
             const res = await checkUsernameAPI(usernameInput);
             setUsernameAvailable(res.available);
-        } catch (err) {
+        } catch {
             setUsernameAvailable(false);
         } finally {
             setIsCheckingUsername(false);
@@ -110,6 +110,7 @@ export default function Settings() {
               handleCancelEmail();
               toast.success("OTP sent to new address.");
           }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
           toast.error(err.response?.data?.message || err.message || "Failed to initiate update");
       } finally {
@@ -247,7 +248,7 @@ export default function Settings() {
                                 Personal Dossier
                             </p>
                             <h1 className="font-im-fell" style={{ fontSize: 26, color: "#2c1a06", fontStyle: "italic", lineHeight: 1.2 }}>
-                                Author's Profile
+                                Author&apos;s Profile
                             </h1>
                         </div>
                     </div>
@@ -303,7 +304,7 @@ export default function Settings() {
                         {/* --- EMAIL SECTION --- */}
                         <section>
                             <div className="flex justify-between items-end mb-2">
-                                <label className="font-special-elite" style={labelStyle}>Correspondent's Address</label>
+                                <label className="font-special-elite" style={labelStyle}>Correspondent&apos;s Address</label>
                                 {!isEditingEmail && (
                                     <button onClick={() => setIsEditingEmail(true)} className="text-[#7a5a22] hover:text-[#502d0a] transition-colors p-1">
                                         <Edit2 size={16} />

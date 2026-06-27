@@ -35,6 +35,7 @@ const ResendTimer = ({ onResend, isResendLoading, isRateLimited }: ResendTimerPr
 
     // Start timer on mount
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         startTimer();
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
