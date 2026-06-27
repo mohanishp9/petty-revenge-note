@@ -6,7 +6,8 @@ import cookieParser from 'cookie-parser';
 import { connectDB } from "./config/db";
 import authRoutes from "./routes/auth.routes";
 import publicNoteRoutes from "./routes/publicNote.route"
-import protectedNoteRoutes from "./routes/protectedNote.route"
+import protectedNoteRoutes from "./routes/protectedNote.route";
+import userRoutes from "./routes/user.routes";
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ app.use(
 app.use(cookieParser());
 
 app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
 app.use("/api/public/notes", publicNoteRoutes);
 app.use("/api/protected/notes", protectedNoteRoutes);
 
