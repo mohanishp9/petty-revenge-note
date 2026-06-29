@@ -95,6 +95,8 @@ skills-lock.json
 # ----------------------------------
 *.md
 
+!README.md
+
 # Ignore Graphify AI tooling files
 .graphify_detect.json
 .graphify_python
