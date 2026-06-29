@@ -1,7 +1,7 @@
 import { BrevoClient } from '@getbrevo/brevo';
 
 // Types
-export type OtpEmailType = 'REGISTER' | 'PASSWORD_RESET' | 'EMAIL_CHANGE';
+export type OtpEmailType = 'REGISTER' | 'PASSWORD_RESET' | 'EMAIL_CHANGE' | 'DELETE_ACCOUNT';
 
 interface EmailTemplate {
   subject: string;
@@ -41,6 +41,18 @@ const buildEmailTemplate = (otp: string, type: OtpEmailType): EmailTemplate => {
           <p style="color: #374151;">Use the OTP below to confirm your email change. It expires in <strong>10 minutes</strong>.</p>
           <div style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #4f46e5; padding: 16px 0;">${otp}</div>
           <p style="color: #6b7280; font-size: 13px;">If you didn't request this, ignore this email.</p>
+        </div>
+      `,
+    },
+    DELETE_ACCOUNT: {
+      subject: '⚠️ Account Deletion Confirmation – Petty Revenge Notes',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 480px; margin: auto; padding: 24px; border: 2px solid #dc2626; border-radius: 8px;">
+          <h2 style="color: #dc2626;">⚠️ Account Deletion Request</h2>
+          <p style="color: #374151;">We received a request to permanently delete your account. This action <strong>cannot be undone</strong>.</p>
+          <p style="color: #374151;">Use this OTP to confirm deletion. It expires in <strong>10 minutes</strong>.</p>
+          <div style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #dc2626; padding: 16px 0;">${otp}</div>
+          <p style="color: #6b7280; font-size: 13px;">If you did NOT request this, your account may be compromised. Change your password immediately.</p>
         </div>
       `,
     },
