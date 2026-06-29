@@ -7,6 +7,7 @@ import type { AppDispatch, RootState } from "@/store/store";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { Eye, EyeOff } from "lucide-react";
+import Link from "next/link";
 
 const Login = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -164,6 +165,11 @@ const Login = () => {
                                 >
                                     {showPassword ? <EyeOff size={16} strokeWidth={1.5} /> : <Eye size={16} strokeWidth={1.5} />}
                                 </button>
+                            </div>
+                            <div className="flex justify-end mt-2">
+                                <Link href="/forgot-password" className="font-crimson text-sm italic hover:underline" style={{ color: "#7a5a22" }}>
+                                    Forgotten your passphrase?
+                                </Link>
                             </div>
                         </div>
 

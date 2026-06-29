@@ -1,6 +1,6 @@
 import { asyncHandler } from "../utils/asyncHandler";
-import { registerSchema, loginSchema, verifyOtpSchema } from "../utils/validation";
-import type { RegisterInput, LoginInput, VerifyOtpInput } from "../utils/validation";
+import { registerSchema, loginSchema, verifyOtpSchema, forgotPasswordSchema, resetPasswordSchema } from "../utils/validation";
+import type { RegisterInput, LoginInput, VerifyOtpInput, ForgotPasswordInput, ResetPasswordInput } from "../utils/validation";
 import User from "../models/User.model";
 import Note from "../models/Note.model";
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "../utils/jwt";
@@ -349,6 +349,133 @@ const getCurrentUserProfileController = asyncHandler(async (req: Request, res: R
     });
 });
 
+// Password Reset Controllers
+
+const resetRedisKey = (email: string) => `auth:reset:${email.toLowerCase().trim()}`;
+
+// @desc  Forgot Password — Send OTP
+// @route POST /auth/forgot-password
+// @access Public
+const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
+    const result = forgotPasswordSchema.safeParse(req.body);
+    if (!result.success) {
+        return res.status(400).json({
+            success: false,
+            message: result.error.issues.map((i: any) => i.message).join(", "),
+        });
+    }
+
+    const { email }: ForgotPasswordInput = result.data;
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+
+    if (!user) {
+        // Prevent email enumeration
+        return res.status(200).json({
+            success: true,
+            message: "If an account with that email exists, an OTP has been sent.",
+        });
+    }
+
+    const plainOtp = generateOtp();
+    const otpHash = await hashOtp(plainOtp);
+
+    // Keep all state in one JSON object for atomic manipulation
+    const payload = { otpHash, attempts: 3 };
+    await redisClient.set(resetRedisKey(email), JSON.stringify(payload), "EX", 600);
+    await sendOtpEmail(email, plainOtp, "PASSWORD_RESET");
+
+    res.status(200).json({
+        success: true,
+        message: "If an account with that email exists, an OTP has been sent.",
+    });
+});
+
+// @desc  Reset Password — Verify OTP and update password
+// @route POST /auth/reset-password
+// @access Public
+const resetPassword = asyncHandler(async (req: Request, res: Response) => {
+    const result = resetPasswordSchema.safeParse(req.body);
+    if (!result.success) {
+        return res.status(400).json({
+            success: false,
+            message: result.error.issues.map((i: any) => i.message).join(", "),
+        });
+    }
+
+    const { email, otp, newPassword }: ResetPasswordInput = result.data;
+    const key = resetRedisKey(email);
+
+    await redisClient.watch(key);
+    const raw = await redisClient.get(key);
+
+    if (!raw) {
+        await redisClient.unwatch();
+        return res.status(400).json({
+            success: false,
+            message: "OTP expired or invalid. Please request a new one.",
+        });
+    }
+
+    const data = JSON.parse(raw);
+    if (data.attempts <= 0) {
+        await redisClient.unwatch();
+        await redisClient.del(key);
+        return res.status(400).json({
+            success: false,
+            message: "Maximum attempts exceeded. Please request a new OTP.",
+        });
+    }
+
+    // Decrement attempts atomically via MULTI/EXEC
+    data.attempts -= 1;
+    const multi = redisClient.multi();
+    multi.set(key, JSON.stringify(data), "KEEPTTL");
+    const execResult = await multi.exec();
+
+    if (!execResult) {
+        // WATCH interrupted by another process
+        return res.status(409).json({
+            success: false,
+            message: "Concurrent request detected. Please try again.",
+        });
+    }
+
+    // After successfully decrementing, verify hash
+    const isValid = await verifyOtp(otp, data.otpHash);
+    
+    if (!isValid) {
+        return res.status(400).json({
+            success: false,
+            message: `Invalid OTP. ${data.attempts} attempt${data.attempts === 1 ? "" : "s"} remaining.`,
+        });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (!user) {
+        return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    // Verify it's not the same as the current password (optional but best practice)
+    const isSame = await user.comparePassword(newPassword);
+    if (isSame) {
+        return res.status(400).json({
+            success: false,
+            message: "New password must be different from current password",
+        });
+    }
+
+    // Update password (triggers pre-save bcrypt hook)
+    user.password = newPassword;
+    await user.save();
+
+    await redisClient.del(key);
+
+    res.status(200).json({
+        success: true,
+        message: "Password reset successfully.",
+    });
+});
+
 export {
     initiateRegistration,
     resendOtp,
@@ -357,4 +484,6 @@ export {
     logoutUserController,
     getCurrentUserProfileController,
     refreshTokenController,
+    forgotPassword,
+    resetPassword,
 };
