@@ -19,3 +19,16 @@ export const verifyOtpSchema = z.object({
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type VerifyOtpInput = z.infer<typeof verifyOtpSchema>;
+
+export const forgotPasswordSchema = z.object({
+    email: z.string().email({ message: "Invalid email" }),
+});
+
+export const resetPasswordSchema = z.object({
+    email: z.string().email({ message: "Invalid email" }),
+    otp: z.string().length(6, { message: "OTP must be exactly 6 digits" }).regex(/^\d+$/, { message: "OTP must be numeric" }),
+    newPassword: z.string().min(6, { message: "Password must have at least 6 characters" }).max(100, { message: "Password must have at most 100 characters" }),
+});
+
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

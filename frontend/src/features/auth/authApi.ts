@@ -74,3 +74,15 @@ export const verifyEmailUpdateAPI = async (data: { otp: string }) => {
     const res = await api.post("/users/profile/email/verify", data);
     return res.data; // { success: true, user: User, message: string }
 };
+
+// --- Password Reset ---
+
+export const forgotPasswordAPI = async (data: { email: string }): Promise<{ success: boolean; message: string }> => {
+    const res = await api.post("/auth/forgot-password", data);
+    return res.data;
+};
+
+export const resetPasswordAPI = async (data: { email: string; otp: string; newPassword: string }): Promise<{ success: boolean; message: string }> => {
+    const res = await api.post("/auth/reset-password", data);
+    return res.data;
+};
