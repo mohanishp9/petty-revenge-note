@@ -86,3 +86,15 @@ export const resetPasswordAPI = async (data: { email: string; otp: string; newPa
     const res = await api.post("/auth/reset-password", data);
     return res.data;
 };
+
+// --- Account Deletion ---
+
+export const deleteAccountInitiateAPI = async (data: { password: string }): Promise<{ success: boolean; message: string }> => {
+    const res = await api.post("/users/profile/delete/initiate", data);
+    return res.data;
+};
+
+export const deleteAccountConfirmAPI = async (data: { otp: string }): Promise<{ success: boolean; message: string }> => {
+    const res = await api.post("/users/profile/delete/confirm", data);
+    return res.data;
+};

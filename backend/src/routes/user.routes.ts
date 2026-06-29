@@ -1,5 +1,5 @@
 import express from 'express';
-import { checkUsername, updateUsername, initiateEmailUpdate, verifyEmailUpdate, updatePassword } from '../controllers/user.controller';
+import { checkUsername, updateUsername, initiateEmailUpdate, verifyEmailUpdate, updatePassword, deleteAccountInitiate, deleteAccountConfirm } from '../controllers/user.controller';
 import { protect } from '../middleware/auth.middleware';
 import { apiLimiter, otpRequestLimiter } from '../middleware/rateLimit.middleware';
 
@@ -17,5 +17,9 @@ router.post('/profile/email/verify', protect, apiLimiter, verifyEmailUpdate);
 
 // Update password
 router.put('/profile/password', protect, apiLimiter, updatePassword);
+
+// Account deletion — two-step: password + OTP
+router.post('/profile/delete/initiate', protect, otpRequestLimiter, deleteAccountInitiate);
+router.post('/profile/delete/confirm', protect, apiLimiter, deleteAccountConfirm);
 
 export default router;

@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useRouter } from "next/navigation";
 import { AppDispatch, RootState } from "@/store/store";
-import { updateUsername, verifyEmailUpdate, updatePassword, clearError, getCurrentUser } from "@/features/auth/authSlice";
+import { updateUsername, verifyEmailUpdate, updatePassword, clearError, getCurrentUser, logoutUser } from "@/features/auth/authSlice";
 import { checkUsernameAPI, initiateEmailUpdateAPI } from "@/features/auth/authApi";
 import toast from "react-hot-toast";
 import { Eye, EyeOff, Edit2, X, Check, Loader2 } from "lucide-react";
 import OTPInput from "@/components/OTPInput";
+import DeleteAccountModal from "@/components/DeleteAccountModal";
 
 // Shared aesthetic styles
 const labelStyle: React.CSSProperties = { display: "block", fontSize: 11, color: "#7a5a22", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "0.3rem" };
@@ -16,6 +18,7 @@ const buttonBase: React.CSSProperties = { padding: "0.4rem 0.8rem", background: 
 
 export default function Settings() {
   const dispatch = useDispatch<AppDispatch>();
+  const router = useRouter();
   const { user, loading, error } = useSelector((state: RootState) => state.auth);
 
   // States for Username
@@ -44,6 +47,9 @@ export default function Settings() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // States for delete account modal
+  const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
 
   // Fetch fresh user data on mount to avoid stale data after login switch
   useEffect(() => {
@@ -152,6 +158,13 @@ export default function Settings() {
           toast.success("Secret Passphrase updated.");
           handleCancelPassword();
       }
+  }
+
+  const handleAccountDeleted = async () => {
+      // Dispatch logout to wipe Redux auth state (access token, user)
+      await dispatch(logoutUser());
+      toast.success("Your account has been permanently deleted.", { duration: 5000 });
+      router.push("/login");
   }
 
   if (!user) return null;
@@ -396,6 +409,40 @@ export default function Settings() {
                             )}
                         </section>
                     </div>
+
+                    {/* --- DANGER ZONE --- */}
+                    <section>
+                        <div className="mb-4">
+                            <p className="font-special-elite" style={{ fontSize: 11, color: "#8a2510", letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                                Danger Zone
+                            </p>
+                        </div>
+                        <div
+                            className="rounded p-4"
+                            style={{ border: "1.5px solid rgba(160,40,20,0.28)", background: "rgba(160,40,20,0.04)" }}
+                        >
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <p className="font-im-fell text-lg italic" style={{ color: "#4c1a0a" }}>Delete Account</p>
+                                    <p className="font-crimson mt-0.5 text-sm italic" style={{ color: "#7a3a18" }}>
+                                        Permanently erase your account and all associated records.
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsDeleteAccountModalOpen(true)}
+                                    className="font-special-elite flex-shrink-0 rounded-sm px-4 py-2.5 text-[10px] uppercase tracking-[0.22em] transition-colors hover:bg-[rgba(160,40,20,0.1)]"
+                                    style={{
+                                        border: "1.5px solid rgba(160,40,20,0.4)",
+                                        color: "#8a2510",
+                                        cursor: "pointer",
+                                    }}
+                                >
+                                    Delete Account
+                                </button>
+                            </div>
+                        </div>
+                    </section>
                 </div>
             </div>
 
@@ -419,6 +466,13 @@ export default function Settings() {
                     </div>
                 </div>
             )}
+
+            {/* Delete Account Modal */}
+            <DeleteAccountModal
+                isOpen={isDeleteAccountModalOpen}
+                onClose={() => setIsDeleteAccountModalOpen(false)}
+                onDeleted={handleAccountDeleted}
+            />
         </div>
     );
 }
