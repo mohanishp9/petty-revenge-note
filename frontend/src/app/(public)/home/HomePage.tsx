@@ -7,10 +7,7 @@ import {
   Search,
   X,
 } from "lucide-react";
-import { searchNotes, clearSearch, setSearchQuery } from "@/features/search/searchSlice";
-import { useDebounce } from "@/hooks/useDebounce";
 import NoteCardSkeleton from "@/components/NoteCardSkeleton";
-import toast from "react-hot-toast";
 import { useAppDispatch } from "@/app/hook/dispatch";
 import {
   addComment,
@@ -20,11 +17,6 @@ import {
 } from "@/features/comments/commentsSlice";
 import { getCurrentUser } from "@/features/auth/authSlice";
 import {
-  getAllNotes,
-} from "@/features/publicNote/publicNoteSlice";
-import type { getNotesParams } from "@/features/publicNote/types";
-import {
-  clearTopNotesByEmoji,
   getTopNotesByEmoji,
 } from "@/features/topNotesByEmoji/topNotesByEmojiSlice";
 import type { RootState } from "@/store/store";
@@ -32,8 +24,9 @@ import type { RootState } from "@/store/store";
 import NoteCard from "@/features/publicNote/components/NoteCard";
 import CommentsPanel from "@/features/comments/components/CommentsPanel";
 import { DEFAULT_REACTIONS } from "@/utils/reactionUtils";
+import { useNoteFeed, NOTES_PER_PAGE } from "@/hooks/useNoteFeed";
+import { useSearchFeed } from "@/hooks/useSearchFeed";
 
-const NOTES_PER_PAGE = 12;
 const COMMENTS_PER_PAGE = 10;
 
 const HomePage = () => {
@@ -48,25 +41,31 @@ const HomePage = () => {
     (state: RootState) => state.getTopNotesByEmoji,
   );
 
-  const [sort, setSort] = useState<getNotesParams["sort"] | undefined>(
-    undefined,
-  );
-  const [page, setPage] = useState(1);
-  const [activeCommentNoteId, setActiveCommentNoteId] = useState<string | null>(
-    null,
-  );
+  const [activeCommentNoteId, setActiveCommentNoteId] = useState<string | null>(null);
   const [commentInput, setCommentInput] = useState("");
-  const [selectedEmoji, setSelectedEmoji] = useState("");
   const [isEmojiMenuOpen, setIsEmojiMenuOpen] = useState(false);
-  const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const emojiMenuRef = useRef<HTMLDivElement | null>(null);
-  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-  const [searchInput, setSearchInput] = useState("");
-  const debouncedSearch = useDebounce(searchInput, 400);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const searchAbortControllerRef = useRef<AbortController | null>(null);
 
   const isSearching = Boolean(searchState.query);
+  const hasMore = isSearching ? searchState.hasMore : count === NOTES_PER_PAGE;
+  const feedLoading = isSearching ? searchState.loading : (topNotesByEmoji.loading || loading);
+
+  const {
+    sort,
+    selectedEmoji,
+    loadMoreRef,
+    handleSortChange: baseHandleSortChange,
+    handleEmojiSortChange: baseHandleEmojiSortChange,
+  } = useNoteFeed({ hasMore, loading: feedLoading, accessToken });
+
+  const {
+    isSearchExpanded,
+    setIsSearchExpanded,
+    searchInput,
+    setSearchInput,
+    searchInputRef,
+  } = useSearchFeed();
+
   const displayedNotes = isSearching
     ? searchState.results
     : selectedEmoji
@@ -75,79 +74,17 @@ const HomePage = () => {
   const activeNote =
     displayedNotes.find((note) => note._id === activeCommentNoteId) ?? null;
   const isCommentPanelOpen = Boolean(activeCommentNoteId);
-  const hasMore = isSearching ? searchState.hasMore : count === NOTES_PER_PAGE;
-  const feedLoading = isSearching
-    ? searchState.loading
-    : selectedEmoji ? topNotesByEmoji.loading : loading;
+
   const feedError = isSearching
     ? searchState.error
     : selectedEmoji ? topNotesByEmoji.error : error;
-
-  // Debounced search: fires 400ms after user stops typing, aborts stale requests
-  useEffect(() => {
-    searchAbortControllerRef.current?.abort();
-
-    if (debouncedSearch.trim() === "") {
-      dispatch(clearSearch());
-      return;
-    }
-
-    dispatch(setSearchQuery(debouncedSearch.trim()));
-    searchAbortControllerRef.current = new AbortController();
-
-    dispatch(searchNotes({ query: debouncedSearch.trim(), page: 1 })).then((action) => {
-      if (searchNotes.rejected.match(action) && action.payload && action.payload !== "aborted") {
-        toast.error(action.payload as string);
-      }
-    });
-
-    return () => { searchAbortControllerRef.current?.abort(); };
-  }, [debouncedSearch, dispatch]);
 
   useEffect(() => {
     if (!accessToken || user) {
       return;
     }
-
     dispatch(getCurrentUser());
   }, [dispatch, accessToken, user]);
-
-  useEffect(() => {
-    if (selectedEmoji) {
-      return;
-    }
-
-    dispatch(
-      getAllNotes(
-        sort
-          ? { sort, page, limit: NOTES_PER_PAGE }
-          : { page, limit: NOTES_PER_PAGE },
-      ),
-    );
-  }, [dispatch, sort, page, selectedEmoji, accessToken]);
-
-  useEffect(() => {
-    const node = loadMoreRef.current;
-
-    if (!node || !hasMore || selectedEmoji) {
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const firstEntry = entries[0];
-
-        if (firstEntry?.isIntersecting && !loading) {
-          setPage((currentPage) => currentPage + 1);
-        }
-      },
-      { rootMargin: "320px 0px" },
-    );
-
-    observer.observe(node);
-
-    return () => observer.disconnect();
-  }, [hasMore, loading, selectedEmoji]);
 
   useEffect(() => {
     if (!isEmojiMenuOpen) {
@@ -179,26 +116,17 @@ const HomePage = () => {
     );
   }, [activeCommentNoteId, dispatch, isCommentPanelOpen]);
 
-  // Lock body scroll when modal is open
   useEffect(() => {
     if (isCommentPanelOpen) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
     }
-
-    return () => {
-      document.body.style.overflow = "unset";
-    };
+    return () => { document.body.style.overflow = "unset"; };
   }, [isCommentPanelOpen]);
 
   const handleSortChange = (newSort: "mostLiked" | "oldest" | undefined) => {
-    if (selectedEmoji) {
-      setSelectedEmoji("");
-      dispatch(clearTopNotesByEmoji());
-    }
-    setSort(newSort);
-    setPage(1);
+    baseHandleSortChange(newSort);
   };
 
   const handleEmojiSortChange = (emoji: string) => {
@@ -206,16 +134,10 @@ const HomePage = () => {
     setCommentInput("");
     dispatch(resetComments());
     setIsEmojiMenuOpen(false);
-
-    if (!emoji) {
-      setSelectedEmoji("");
-      dispatch(clearTopNotesByEmoji());
-      setPage(1);
-      return;
-    }
-
-    setSelectedEmoji(emoji);
-    dispatch(getTopNotesByEmoji(emoji));
+    
+    baseHandleEmojiSortChange(emoji, () => {
+      if (emoji) dispatch(getTopNotesByEmoji(emoji));
+    });
   };
 
   const handleCommentToggle = (noteId: string) => {
