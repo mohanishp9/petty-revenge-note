@@ -58,3 +58,25 @@ export const otpRequestLimiter = rateLimit({
   // Change to false if you prefer fail closed (blocks all on Redis down)
   skipFailedRequests: false,
 });
+
+// Search API Limiter
+// Protects GET /api/public/notes/search
+// Limit: 30 requests per minute per IP — prevents DoS attacks on expensive Atlas Search queries
+
+export const searchRateLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: new RedisStore({
+    sendCommand: ((...args: Parameters<SendCommandFn>) =>
+      redisClient.call(...(args as [string, ...string[]]))
+    ) as SendCommandFn,
+    prefix: 'rl:search:',
+  }),
+  message: {
+    success: false,
+    message: 'Too many search requests. Please slow down and try again.',
+  },
+  skipFailedRequests: false,
+});

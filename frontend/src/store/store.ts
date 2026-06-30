@@ -6,6 +6,7 @@ import createNoteReducer from "@/features/createNote/createNoteSlice";
 import getMyNoteReducer from "@/features/getMyNotes/getMyNotesSlice"
 import topNotesByEmojiSliceReducer from "@/features/topNotesByEmoji/topNotesByEmojiSlice"
 import deleteNoteReducer from "@/features/deleteNote/deleteNoteSlice"
+import searchReducer from "@/features/search/searchSlice"
 
 export const store = configureStore({
     reducer: {
@@ -16,6 +17,7 @@ export const store = configureStore({
         getMyNote: getMyNoteReducer,
         getTopNotesByEmoji: topNotesByEmojiSliceReducer,
         deleteNote: deleteNoteReducer,
+        search: searchReducer,
     },
 });
 

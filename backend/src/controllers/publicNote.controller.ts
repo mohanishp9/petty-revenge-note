@@ -182,8 +182,140 @@ const getCommentsController = asyncHandler(async (req: Request, res: Response) =
     });
 });
 
+// @desc Search notes
+// @route GET /search?q=query&page=1&limit=10
+// @access Public
+const searchNotesController = asyncHandler(async (req: Request, res: Response) => {
+    const q = req.query.q as string;
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 12;
+
+    if (!q || typeof q !== 'string' || q.trim().length === 0) {
+        return res.status(200).json({ success: true, count: 0, total: 0, data: [] });
+    }
+
+    const searchStr = q.trim();
+    const skip = (page - 1) * limit;
+
+    const pipeline: any[] = [
+        {
+            $search: {
+                index: "note-search", // Must match Atlas index name
+                compound: {
+                    should: [
+                        {
+                            text: {
+                                query: searchStr,
+                                path: "subject",
+                                score: { boost: { value: 5 } },
+                                fuzzy: { maxEdits: 1 }
+                            }
+                        },
+                        {
+                            text: {
+                                query: searchStr,
+                                path: "content",
+                                score: { boost: { value: 1 } },
+                                fuzzy: { maxEdits: 2 }
+                            }
+                        }
+                    ]
+                },
+                highlight: { path: ["subject", "content"] }
+            }
+        },
+        {
+            $addFields: {
+                score: { $meta: "searchScore" },
+                highlights: { $meta: "searchHighlights" }
+            }
+        }
+    ];
+
+    // For total count without paginating
+    const countPipeline = [...pipeline, { $count: "total" }];
+    const countResult = await Note.aggregate(countPipeline);
+    const total = countResult[0]?.total || 0;
+
+    // Add pagination and lookup to the main pipeline
+    pipeline.push(
+        { $skip: skip },
+        { $limit: limit },
+        {
+            $lookup: {
+                from: "users",
+                localField: "user",
+                foreignField: "_id",
+                as: "userDoc"
+            }
+        },
+        {
+            $unwind: {
+                path: "$userDoc",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
+            $addFields: {
+                user: {
+                    _id: "$userDoc._id",
+                    username: "$userDoc.username"
+                }
+            }
+        },
+        {
+            $project: {
+                userDoc: 0
+            }
+        }
+    );
+
+    const notes = await Note.aggregate(pipeline);
+
+    const userId = req.user?._id;
+    let enrichedNotes = notes;
+
+    if (userId && notes.length > 0) {
+        const noteIds = notes.map(n => n._id);
+
+        const likes = await Like.find({
+            userId,
+            noteId: { $in: noteIds },
+        }).lean();
+        const likedSet = new Set(likes.map(l => l.noteId.toString()));
+
+        const reactions = await Reaction.find({
+            user: userId,
+            note: { $in: noteIds }
+        }).lean();
+        const reactionMap = new Map(
+            reactions.map(r => [r.note.toString(), r.emoji])
+        );
+
+        enrichedNotes = notes.map(note => ({
+            ...note,
+            hasLiked: likedSet.has(note._id.toString()),
+            userReaction: reactionMap.get(note._id.toString()) || null
+        }));
+    } else {
+        enrichedNotes = notes.map(note => ({
+            ...note,
+            hasLiked: false,
+            userReaction: null
+        }));
+    }
+
+    res.status(200).json({
+        success: true,
+        count: enrichedNotes.length,
+        total,
+        data: enrichedNotes,
+    });
+});
+
 export {
     getNotesController, // done
     getTopNotesByEmojiController,
     getCommentsController, // done
+    searchNotesController, // new
 }

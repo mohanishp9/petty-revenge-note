@@ -1,17 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
-import {
-  ChevronDown,
-  Heart,
-  LoaderCircle,
-  MessageCircle,
-  Send,
-  SmilePlus,
-  X,
-} from "lucide-react";
+import NoteCardSkeleton from "@/components/NoteCardSkeleton";
 import { useAppDispatch } from "@/app/hook/dispatch";
 import {
   addComment,
@@ -19,604 +10,20 @@ import {
   getNoteComments,
   resetComments,
 } from "@/features/comments/commentsSlice";
-import type { CommentsState } from "@/features/comments/types";
 import { getCurrentUser } from "@/features/auth/authSlice";
 import {
-  getAllNotes,
-  reactToNote,
-  toggleLike,
-} from "@/features/publicNote/publicNoteSlice";
-import type { Note, getNotesParams } from "@/features/publicNote/types";
-import {
-  clearTopNotesByEmoji,
   getTopNotesByEmoji,
 } from "@/features/topNotesByEmoji/topNotesByEmojiSlice";
 import type { RootState } from "@/store/store";
 
-import CommentItem from "@/components/CommentItem";
+import { clearSearch } from "@/features/search/searchSlice";
+import FeedFilterBar from "@/features/publicNote/components/FeedFilterBar";
+import NoteCard from "@/features/publicNote/components/NoteCard";
+import CommentsPanel from "@/features/comments/components/CommentsPanel";
+import { useNoteFeed, NOTES_PER_PAGE } from "@/hooks/useNoteFeed";
+import { useSearchFeed } from "@/hooks/useSearchFeed";
 
-const DEFAULT_REACTIONS = ["😂", "😡", "😳", "😭"] as const;
-const NOTES_PER_PAGE = 12;
 const COMMENTS_PER_PAGE = 10;
-
-const getReactionTotal = (reactionsCount: Record<string, number>) =>
-  Object.values(reactionsCount).reduce((sum, count) => sum + count, 0);
-
-const formatReactionSummary = (reactionsCount: Record<string, number>) => {
-  const entries = Object.entries(reactionsCount)
-    .filter(([, count]) => count > 0)
-    .sort(([, countA], [, countB]) => countB - countA);
-
-  if (!entries.length) {
-    return "No reactions yet";
-  }
-
-  return entries
-    .slice(0, 3)
-    .map(([emoji, count]) => `${emoji} ${count}`)
-    .join("  ");
-};
-
-type NoteCardProps = {
-  isCommentsOpen: boolean;
-  isLoggedIn: boolean;
-  note: Note;
-  onCommentToggle: (noteId: string) => void;
-};
-
-const NoteCard = ({
-  isCommentsOpen,
-  isLoggedIn,
-  note,
-  onCommentToggle,
-}: NoteCardProps) => {
-  const dispatch = useAppDispatch();
-  const router = useRouter();
-  const [isReactionMenuOpen, setIsReactionMenuOpen] = useState(false);
-  const reactionMenuRef = useRef<HTMLDivElement | null>(null);
-
-  const hasLiked = note.hasLiked;
-  const userReaction = note.userReaction;
-  const reactionCounts = note.reactionsCount;
-  const visibleReactionCount = getReactionTotal(reactionCounts);
-
-  useEffect(() => {
-    if (!isReactionMenuOpen) {
-      return;
-    }
-
-    const handlePointerDown = (event: MouseEvent) => {
-      if (!reactionMenuRef.current?.contains(event.target as Node)) {
-        setIsReactionMenuOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handlePointerDown);
-    return () => document.removeEventListener("mousedown", handlePointerDown);
-  }, [isReactionMenuOpen]);
-
-  const handleLikeClick = () => {
-    if (!isLoggedIn) {
-      router.push("/login");
-      return;
-    }
-
-    dispatch(toggleLike({ noteId: note._id }));
-  };
-
-  const handleReactionSelect = (reaction: string) => {
-    if (!isLoggedIn) {
-      router.push("/login");
-      return;
-    }
-
-    dispatch(reactToNote({ noteId: note._id, emoji: reaction }));
-    setIsReactionMenuOpen(false);
-  };
-
-  return (
-    <article
-      className="relative rounded-sm transition duration-300 ease-out"
-      style={{
-        background:
-          "linear-gradient(170deg, #f2e2b0 0%, #f5e9c8 40%, #ede0b0 100%)",
-        backgroundImage: `...`,
-        padding: "1.5rem",
-        border: "1px solid rgba(120,80,20,0.2)",
-        breakInside: "avoid",
-        marginBottom: "1.25rem",
-        display: "inline-block",
-        width: "100%",
-        
-      }}
-    >
-      <div
-        className="absolute bottom-0 left-11 top-0 w-px"
-        style={{ background: "rgba(180,40,30,0.3)" }}
-      />
-
-      <div
-        className="pointer-events-none absolute bottom-0 left-0 right-0 h-4"
-        style={{
-          background: "#0e0800",
-          opacity: 0.5,
-          clipPath:
-            "polygon(0% 70%,2% 35%,4% 60%,6% 25%,8% 55%,10% 20%,13% 50%,16% 30%,20% 60%,24% 25%,28% 55%,33% 35%,38% 65%,43% 20%,48% 55%,54% 30%,60% 60%,66% 25%,72% 55%,78% 35%,84% 65%,90% 20%,94% 50%,97% 30%,100% 55%,100% 100%,0% 100%)",
-        }}
-      />
-
-      <div className="mb-4 flex items-center gap-3 pl-4">
-        <div
-          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-sm text-2xl"
-          style={{
-            background: "rgba(120,80,20,0.12)",
-            border: "1px solid rgba(120,80,20,0.2)",
-          }}
-        >
-          {note.categoryEmoji}
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="font-special-elite truncate text-[12px] tracking-wide text-stone-800">
-            {note.showUsername ? note.user.username : "Anonymous"}
-          </p>
-          <p
-            className="font-crimson text-[12px] italic"
-            style={{ color: "#8a6030" }}
-          >
-            {new Date(note.createdAt).toLocaleDateString()}
-          </p>
-        </div>
-        {!isLoggedIn && (
-          <button
-            type="button"
-            className="font-special-elite flex-shrink-0 rounded-sm px-2 py-1 text-[9px] uppercase tracking-widest"
-            style={{
-              border: "1px solid rgba(120,80,20,0.25)",
-              color: "#8a6030",
-            }}
-            onClick={() => router.push("/login")}
-          >
-            Login
-          </button>
-        )}
-      </div>
-
-      {note.subject && (
-        <h2
-          className="font-im-fell mb-2 pl-4 text-[20px] italic leading-tight"
-          style={{ color: "#1e0f02" }}
-        >
-          {note.subject}
-        </h2>
-      )}
-
-      <p
-        className="font-crimson mb-4 pl-4 pr-2 text-[18px] leading-[1.7]"
-        style={{ color: "#3a2008" }}
-      >
-        {note.content}
-      </p>
-
-      <div
-        className="font-crimson mb-4 pl-4 pb-3 text-[13px] italic"
-        style={{
-          color: "#7a5020",
-          borderBottom: "1px solid rgba(100,60,10,0.15)",
-        }}
-      >
-        {formatReactionSummary(reactionCounts)}
-      </div>
-
-      <div className="grid grid-cols-3 gap-2 pl-3">
-        <button
-          type="button"
-          onClick={handleLikeClick}
-          disabled={!isLoggedIn}
-          className="font-special-elite flex items-center justify-center gap-2 rounded-sm px-3 py-2 text-[10px] uppercase tracking-wider transition"
-          style={{
-            border: `1px solid ${hasLiked ? "rgba(160,40,20,0.35)" : "rgba(100,60,10,0.2)"}`,
-            background: hasLiked ? "rgba(160,40,20,0.08)" : "transparent",
-            color: hasLiked ? "#8a2510" : "#6a4515",
-            opacity: !isLoggedIn ? 0.6 : 1,
-          }}
-        >
-          <Heart className={`h-4 w-4 ${hasLiked ? "fill-current" : ""}`} />
-          <span>{note.likes}</span>
-        </button>
-
-        <div className="relative" ref={reactionMenuRef}>
-          <button
-            type="button"
-            onClick={() => {
-              if (!isLoggedIn) {
-                router.push("/login");
-                return;
-              }
-
-              setIsReactionMenuOpen((current) => !current);
-            }}
-            disabled={!isLoggedIn}
-            className="font-special-elite flex w-full items-center justify-center gap-2 rounded-sm px-3 py-2 text-[10px] uppercase tracking-wider transition"
-            style={{
-              border: `1px solid ${userReaction ? "rgba(160,120,20,0.4)" : "rgba(100,60,10,0.2)"}`,
-              background: userReaction ? "rgba(160,120,20,0.1)" : "transparent",
-              color: userReaction ? "#7a5010" : "#6a4515",
-              opacity: !isLoggedIn ? 0.6 : 1,
-            }}
-          >
-            {userReaction ? (
-              <span style={{ fontSize: 16 }}>{userReaction}</span>
-            ) : (
-              <SmilePlus className="h-4 w-4" />
-            )}
-            <span>{userReaction ?? "React"}</span>
-          </button>
-
-          {isReactionMenuOpen && (
-            <div
-              className="absolute left-1/2 top-[calc(100%+10px)] z-10 flex -translate-x-1/2 items-center gap-1 rounded-sm px-2 py-2"
-              style={{
-                background: "#f4e7c1",
-                border: "1px solid rgba(120,80,20,0.35)",
-                boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
-              }}
-            >
-              {DEFAULT_REACTIONS.map((reaction) => (
-                <button
-                  key={reaction}
-                  type="button"
-                  onClick={() => handleReactionSelect(reaction)}
-                  className="flex h-10 w-10 items-center justify-center rounded-sm text-xl transition hover:scale-110"
-                  style={{
-                    background:
-                      userReaction === reaction
-                        ? "rgba(120,80,20,0.15)"
-                        : "transparent",
-                  }}
-                >
-                  {reaction}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <button
-          type="button"
-          onClick={() => onCommentToggle(note._id)}
-          className="font-special-elite flex items-center justify-center gap-2 rounded-sm px-3 py-2 text-[10px] uppercase tracking-wider transition"
-          style={{
-            border: `1px solid ${isCommentsOpen ? "rgba(150,90,10,0.45)" : "rgba(100,60,10,0.2)"}`,
-            background: isCommentsOpen ? "rgba(150,90,10,0.1)" : "transparent",
-            color: isCommentsOpen ? "#7b4f15" : "#6a4515",
-          }}
-        >
-          <MessageCircle className="h-4 w-4" />
-          <span>{note.commentsCount}</span>
-        </button>
-      </div>
-
-      <div
-        className="font-special-elite mt-4 pl-4 text-[9px] uppercase tracking-[0.22em]"
-        style={{ color: "#8a6030" }}
-      >
-        {visibleReactionCount} reactions
-      </div>
-    </article>
-  );
-};
-
-type CommentsPanelProps = {
-  activeNote: Note | null;
-  commentInput: string;
-  commentsState: CommentsState;
-  isLoggedIn: boolean;
-  currentUser: unknown;
-  onChangeInput: (value: string) => void;
-  onClose: () => void;
-  onLoadMore: () => void;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  onReplySubmit: (commentId: string, text: string) => void;
-};
-
-const CommentsPanel = ({
-  activeNote,
-  commentInput,
-  commentsState,
-  isLoggedIn,
-  currentUser,
-  onChangeInput,
-  onClose,
-  onLoadMore,
-  onSubmit,
-  onReplySubmit,
-}: CommentsPanelProps) => {
-  const [replyingTo, setReplyingTo] = useState<string | null>(null);
-  const [replyInput, setReplyInput] = useState("");
-
-  if (!activeNote) {
-    return null;
-  }
-
-  const handleReplyClick = (commentId: string) => {
-    if (replyingTo === commentId) {
-      setReplyingTo(null);
-      setReplyInput("");
-    } else {
-      setReplyingTo(commentId);
-      setReplyInput("");
-    }
-  };
-
-  const handleReplyInputChange = (value: string) => {
-    setReplyInput(value);
-  };
-
-  const handleReplySubmitInternal = (commentId: string, text: string) => {
-    if (text.trim()) {
-      onReplySubmit(commentId, text.trim());
-      setReplyingTo(null);
-      setReplyInput("");
-    }
-  };
-
-  return (
-    <>
-      {/* Blurred background overlay */}
-      <div
-        className="fixed inset-0 z-40 transition-opacity duration-300"
-        style={{
-          background: "rgba(20,10,0,0.35)",
-          backdropFilter: "blur(3px)",
-        }}
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      {/* Modal container */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="relative w-full max-w-5xl" style={{ height: "82vh" }}>
-          {/* Modal content - split layout */}
-          <div
-            className="flex flex-row h-full gap-0"
-            style={{
-              background: "transparent",
-              border: "none",
-              boxShadow: "none",
-            }}
-          >
-            {/* Left side - Original Note */}
-            <div
-              className="flex flex-col border-b lg:border-b-0 lg:border-r lg:w-1/2 overflow-hidden"
-              style={{ borderColor: "rgba(120,80,20,0.14)" }}
-            >
-              <div className="px-6 py-5 flex-shrink-0">
-                <p
-                  className="font-special-elite text-[10px] uppercase tracking-[0.25em]"
-                  style={{ color: "#7a5a22" }}
-                >
-                  Original Note
-                </p>
-                <h3
-                  className="font-im-fell mt-2 text-xl italic"
-                  style={{ color: "#5a3210" }}
-                >
-                  {activeNote.subject || "Untitled Note"}
-                </h3>
-              </div>
-
-              {/* Note preview with scroll */}
-              <div className="flex-1 overflow-y-auto px-6 pb-6 min-h-0">
-                <div
-                  className="rounded-sm border p-4 mb-4"
-                  style={{
-                    background:
-                      "linear-gradient(170deg, #f2e2b0 0%, #f5e9c8 40%, #ede0b0 100%)",
-                    borderColor: "rgba(120,80,20,0.2)",
-                  }}
-                >
-                  <div className="flex items-center gap-3 mb-3">
-                    <div
-                      className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-sm text-lg"
-                      style={{
-                        background: "rgba(120,80,20,0.12)",
-                        border: "1px solid rgba(120,80,20,0.2)",
-                      }}
-                    >
-                      {activeNote.categoryEmoji}
-                    </div>
-                    <div>
-                      <p className="font-special-elite text-[11px] tracking-wide text-stone-800">
-                        {activeNote.showUsername
-                          ? activeNote.user.username
-                          : "Anonymous"}
-                      </p>
-                      <p
-                        className="font-crimson text-[11px] italic"
-                        style={{ color: "#8a6030" }}
-                      >
-                        {new Date(activeNote.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-
-                  {activeNote.subject && (
-                    <h4
-                      className="font-im-fell mb-2 text-[18px] italic"
-                      style={{ color: "#1e0f02" }}
-                    >
-                      {activeNote.subject}
-                    </h4>
-                  )}
-
-                  <p
-                    className="font-crimson text-[16px] leading-[1.7]"
-                    style={{ color: "#3a2008" }}
-                  >
-                    {activeNote.content}
-                  </p>
-
-                  <div
-                    className="font-crimson mt-4 pt-3 text-[12px] italic"
-                    style={{
-                      color: "#7a5020",
-                      borderTop: "1px solid rgba(100,60,10,0.15)",
-                    }}
-                  >
-                    {formatReactionSummary(activeNote.reactionsCount)}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Right side - Comments */}
-            <div
-  className="flex flex-col lg:w-1/2 rounded-sm overflow-hidden"
-  style={{
-    background: "linear-gradient(180deg, #f8ecd0 0%, #f2e2b2 100%)",
-    border: "1px solid rgba(120,80,20,0.25)",
-    boxShadow: "8px 12px 48px rgba(10,5,0,0.6), 0 4px 16px rgba(10,5,0,0.4), inset 0 1px 0 rgba(255,240,180,0.4)",
-    height: "100%",
-  }}
->
-              <div
-                className="flex items-start justify-between gap-3 border-b px-6 py-5 flex-shrink-0"
-                style={{ borderColor: "rgba(120,80,20,0.14)" }}
-              >
-                <div>
-                  <p
-                    className="font-special-elite text-[10px] uppercase tracking-[0.25em]"
-                    style={{ color: "#7a5a22" }}
-                  >
-                    Comments
-                  </p>
-                  <p
-                    className="font-crimson mt-2 text-sm italic"
-                    style={{ color: "#8a6030" }}
-                  >
-                    {activeNote.commentsCount}{" "}
-                    {activeNote.commentsCount === 1 ? "comment" : "comments"}
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="flex h-10 w-10 items-center justify-center rounded-sm border flex-shrink-0"
-                  style={{
-                    borderColor: "rgba(120,80,20,0.2)",
-                    color: "#6a4515",
-                  }}
-                  aria-label="Close comments"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div
-                className="overflow-y-auto px-6 py-4"
-                style={{ height: "calc(100% - 180px)" }}
-              >
-                {commentsState.loading &&
-                  commentsState.comments.length === 0 && (
-                    <div
-                      className="flex items-center justify-center py-10"
-                      style={{ color: "#8a6030" }}
-                    >
-                      <LoaderCircle className="h-5 w-5 animate-spin" />
-                    </div>
-                  )}
-
-                {!commentsState.loading &&
-                  commentsState.comments.length === 0 && (
-                    <p
-                      className="font-crimson py-8 text-center italic"
-                      style={{ color: "#8a6030" }}
-                    >
-                      No comments yet. Start the thread.
-                    </p>
-                  )}
-
-                <div className="space-y-3">
-                  {commentsState.comments.map((comment) => (
-                    <CommentItem
-                      key={comment._id}
-                      comment={comment}
-                      isLoggedIn={isLoggedIn}
-                      currentUser={currentUser}
-                      onReplyClick={handleReplyClick}
-                      replyingTo={replyingTo}
-                      replyInput={replyInput}
-                      onReplyInputChange={handleReplyInputChange}
-                      onReplySubmit={handleReplySubmitInternal}
-                    />
-                  ))}
-                </div>
-
-                {commentsState.hasMore && (
-                  <button
-                    type="button"
-                    onClick={onLoadMore}
-                    disabled={commentsState.loading}
-                    className="font-special-elite mt-4 w-full rounded-sm px-4 py-3 text-[10px] uppercase tracking-[0.22em] transition"
-                    style={{
-                      border: "1px solid rgba(120,80,20,0.22)",
-                      color: "#6a4515",
-                      opacity: commentsState.loading ? 0.7 : 1,
-                    }}
-                  >
-                    {commentsState.loading
-                      ? "Loading..."
-                      : "Load Older Comments"}
-                  </button>
-                )}
-              </div>
-
-              <div
-                className="border-t px-6 py-4 flex-shrink-0"
-                style={{ borderColor: "rgba(120,80,20,0.14)" }}
-              >
-                <form onSubmit={onSubmit} className="space-y-3">
-                  <textarea
-                    value={commentInput}
-                    onChange={(event) => onChangeInput(event.target.value)}
-                    placeholder={
-                      isLoggedIn
-                        ? "Write your comment..."
-                        : "Login to add a comment"
-                    }
-                    disabled={!isLoggedIn}
-                    rows={3}
-                    className="font-crimson w-full resize-none rounded-sm border bg-transparent px-3 py-3 text-[14px] leading-6 outline-none"
-                    style={{
-                      borderColor: "rgba(120,80,20,0.22)",
-                      color: "#3a2008",
-                      opacity: isLoggedIn ? 1 : 0.65,
-                    }}
-                  />
-                  <button
-                    type="submit"
-                    disabled={!isLoggedIn || !commentInput.trim()}
-                    className="font-special-elite flex w-full items-center justify-center gap-2 rounded-sm px-4 py-3 text-[10px] uppercase tracking-[0.22em] transition"
-                    style={{
-                      background: "rgba(122,90,34,0.12)",
-                      border: "1px solid rgba(120,80,20,0.22)",
-                      color: "#6a4515",
-                      opacity: !isLoggedIn || !commentInput.trim() ? 0.6 : 1,
-                    }}
-                  >
-                    <Send className="h-4 w-4" />
-                    <span>Add Comment</span>
-                  </button>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-};
 
 const HomePage = () => {
   const dispatch = useAppDispatch();
@@ -625,77 +32,55 @@ const HomePage = () => {
   );
   const { accessToken, user } = useSelector((state: RootState) => state.auth);
   const commentsState = useSelector((state: RootState) => state.comments);
+  const searchState = useSelector((state: RootState) => state.search);
   const topNotesByEmoji = useSelector(
     (state: RootState) => state.getTopNotesByEmoji,
   );
 
-  const [sort, setSort] = useState<getNotesParams["sort"] | undefined>(
-    undefined,
-  );
-  const [page, setPage] = useState(1);
-  const [activeCommentNoteId, setActiveCommentNoteId] = useState<string | null>(
-    null,
-  );
+  const [activeCommentNoteId, setActiveCommentNoteId] = useState<string | null>(null);
   const [commentInput, setCommentInput] = useState("");
-  const [selectedEmoji, setSelectedEmoji] = useState("");
   const [isEmojiMenuOpen, setIsEmojiMenuOpen] = useState(false);
-  const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const emojiMenuRef = useRef<HTMLDivElement | null>(null);
 
-  const displayedNotes = selectedEmoji
-    ? topNotesByEmoji.data.map((item) => item.note)
-    : notes;
+  const isSearching = Boolean(searchState.query);
+  const hasMore = isSearching ? searchState.hasMore : count === NOTES_PER_PAGE;
+  const feedLoading = isSearching ? searchState.loading : (topNotesByEmoji.loading || loading);
+
+  const {
+    sort,
+    selectedEmoji,
+    loadMoreRef,
+    handleSortChange: baseHandleSortChange,
+    handleEmojiSortChange: baseHandleEmojiSortChange,
+  } = useNoteFeed({ hasMore, loading: feedLoading, accessToken });
+
+  const {
+    isSearchExpanded,
+    setIsSearchExpanded,
+    searchInput,
+    setSearchInput,
+    searchInputRef,
+  } = useSearchFeed();
+
+  const displayedNotes = isSearching
+    ? searchState.results
+    : selectedEmoji
+      ? topNotesByEmoji.data.map((item) => item.note)
+      : notes;
   const activeNote =
     displayedNotes.find((note) => note._id === activeCommentNoteId) ?? null;
   const isCommentPanelOpen = Boolean(activeCommentNoteId);
-  const hasMore = count === NOTES_PER_PAGE;
-  const feedLoading = selectedEmoji ? topNotesByEmoji.loading : loading;
-  const feedError = selectedEmoji ? topNotesByEmoji.error : error;
+
+  const feedError = isSearching
+    ? searchState.error
+    : selectedEmoji ? topNotesByEmoji.error : error;
 
   useEffect(() => {
     if (!accessToken || user) {
       return;
     }
-
     dispatch(getCurrentUser());
   }, [dispatch, accessToken, user]);
-
-  useEffect(() => {
-    if (selectedEmoji) {
-      return;
-    }
-
-    dispatch(
-      getAllNotes(
-        sort
-          ? { sort, page, limit: NOTES_PER_PAGE }
-          : { page, limit: NOTES_PER_PAGE },
-      ),
-    );
-  }, [dispatch, sort, page, selectedEmoji, accessToken]);
-
-  useEffect(() => {
-    const node = loadMoreRef.current;
-
-    if (!node || !hasMore || selectedEmoji) {
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const firstEntry = entries[0];
-
-        if (firstEntry?.isIntersecting && !loading) {
-          setPage((currentPage) => currentPage + 1);
-        }
-      },
-      { rootMargin: "320px 0px" },
-    );
-
-    observer.observe(node);
-
-    return () => observer.disconnect();
-  }, [hasMore, loading, selectedEmoji]);
 
   useEffect(() => {
     if (!isEmojiMenuOpen) {
@@ -727,26 +112,17 @@ const HomePage = () => {
     );
   }, [activeCommentNoteId, dispatch, isCommentPanelOpen]);
 
-  // Lock body scroll when modal is open
   useEffect(() => {
     if (isCommentPanelOpen) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
     }
-
-    return () => {
-      document.body.style.overflow = "unset";
-    };
+    return () => { document.body.style.overflow = "unset"; };
   }, [isCommentPanelOpen]);
 
   const handleSortChange = (newSort: "mostLiked" | "oldest" | undefined) => {
-    if (selectedEmoji) {
-      setSelectedEmoji("");
-      dispatch(clearTopNotesByEmoji());
-    }
-    setSort(newSort);
-    setPage(1);
+    baseHandleSortChange(newSort);
   };
 
   const handleEmojiSortChange = (emoji: string) => {
@@ -754,16 +130,10 @@ const HomePage = () => {
     setCommentInput("");
     dispatch(resetComments());
     setIsEmojiMenuOpen(false);
-
-    if (!emoji) {
-      setSelectedEmoji("");
-      dispatch(clearTopNotesByEmoji());
-      setPage(1);
-      return;
-    }
-
-    setSelectedEmoji(emoji);
-    dispatch(getTopNotesByEmoji(emoji));
+    
+    baseHandleEmojiSortChange(emoji, () => {
+      if (emoji) dispatch(getTopNotesByEmoji(emoji));
+    });
   };
 
   const handleCommentToggle = (noteId: string) => {
@@ -870,118 +240,45 @@ const HomePage = () => {
         </p>
       </div>
 
-      <div
-        className="flex flex-wrap gap-2 px-4 py-4 sm:px-6 lg:px-8"
-        style={{ borderBottom: "1px solid rgba(180,130,40,0.1)" }}
-      >
-        {[
-          { label: "Newest", value: undefined },
-          { label: "Oldest", value: "oldest" as const },
-          { label: "Most Liked", value: "mostLiked" as const },
-        ].map(({ label, value }) => (
-          <button
-            key={label}
-            type="button"
-            onClick={() => handleSortChange(value)}
-            className="font-special-elite rounded-sm px-3 py-2 text-[10px] uppercase tracking-widest transition"
-            style={{
-              border: `1px solid ${sort === value ? "rgba(180,130,40,0.6)" : "rgba(180,130,40,0.25)"}`,
-              background:
-                sort === value ? "rgba(180,130,40,0.12)" : "transparent",
-              color: "#8a6a30",
-            }}
-          >
-            {label}
-          </button>
-        ))}
-
-        <div className="relative" ref={emojiMenuRef}>
-          <button
-            type="button"
-            onClick={() => setIsEmojiMenuOpen((current) => !current)}
-            className="font-special-elite flex min-h-[42px] items-center gap-3 rounded-sm px-3 py-2 text-[10px] uppercase tracking-widest transition"
-            style={{
-              border: `1px solid ${selectedEmoji ? "rgba(180,130,40,0.6)" : "rgba(180,130,40,0.25)"}`,
-              background: selectedEmoji
-                ? "rgba(180,130,40,0.12)"
-                : "transparent",
-              color: "#8a6a30",
-            }}
-          >
-            <span>Top By Emoji</span>
-            <span
-              className="flex min-w-[72px] items-center justify-center rounded-sm px-3 py-1.5 normal-case tracking-normal"
-              style={{
-                background: selectedEmoji
-                  ? "rgba(180,130,40,0.18)"
-                  : "rgba(180,130,40,0.08)",
-                border: "1px solid rgba(180,130,40,0.2)",
-                color: "#6a4515",
-                fontSize: selectedEmoji ? "1.35rem" : "0.8rem",
-                lineHeight: 1,
-              }}
-            >
-              {selectedEmoji || "All"}
-            </span>
-            <ChevronDown className="h-3 w-3 flex-shrink-0" />
-          </button>
-
-          {isEmojiMenuOpen && (
-            <div
-              className="absolute left-0 top-[calc(100%+8px)] z-20 min-w-[220px] rounded-sm p-2"
-              style={{
-                background: "linear-gradient(180deg, #f4e7c1 0%, #eeddb0 100%)",
-                border: "1px solid rgba(120,80,20,0.28)",
-                boxShadow: "0 12px 28px rgba(40,20,0,0.24)",
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => handleEmojiSortChange("")}
-                className="font-special-elite flex w-full items-center justify-between rounded-sm px-3 py-2 text-[10px] uppercase tracking-widest transition"
-                style={{
-                  background: !selectedEmoji
-                    ? "rgba(180,130,40,0.14)"
-                    : "transparent",
-                  color: "#6a4515",
-                }}
-              >
-                <span>All</span>
-                {!selectedEmoji && <span>•</span>}
-              </button>
-              {DEFAULT_REACTIONS.map((emoji) => (
-                <button
-                  key={emoji}
-                  type="button"
-                  onClick={() => handleEmojiSortChange(emoji)}
-                  className="font-special-elite flex w-full items-center justify-between rounded-sm px-3 py-2 text-[10px] uppercase tracking-widest transition"
-                  style={{
-                    background:
-                      selectedEmoji === emoji
-                        ? "rgba(180,130,40,0.14)"
-                        : "transparent",
-                    color: "#6a4515",
-                  }}
-                >
-                  <span className="flex items-center gap-3">
-                    <span className="text-[1.65rem] leading-none">{emoji}</span>
-                    <span>
-                      {selectedEmoji === emoji ? "Selected" : "Choose"}
-                    </span>
-                  </span>
-                  {selectedEmoji === emoji && <span>•</span>}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+      <FeedFilterBar
+        sort={sort}
+        handleSortChange={handleSortChange}
+        selectedEmoji={selectedEmoji}
+        isEmojiMenuOpen={isEmojiMenuOpen}
+        setIsEmojiMenuOpen={setIsEmojiMenuOpen}
+        emojiMenuRef={emojiMenuRef}
+        handleEmojiSortChange={handleEmojiSortChange}
+        isSearchExpanded={isSearchExpanded}
+        setIsSearchExpanded={setIsSearchExpanded}
+        searchInput={searchInput}
+        setSearchInput={setSearchInput}
+        searchInputRef={searchInputRef}
+        onClearSearch={() => {
+          setSearchInput("");
+          dispatch(clearSearch());
+        }}
+        onToggleSearch={() => {
+          const next = !isSearchExpanded;
+          setIsSearchExpanded(next);
+          if (next) {
+            setTimeout(() => searchInputRef.current?.focus(), 50);
+          } else {
+            setSearchInput("");
+            dispatch(clearSearch());
+          }
+        }}
+      />
 
       <div className="w-full px-4 py-6 sm:px-6 lg:px-8">
         {feedLoading && displayedNotes.length === 0 && (
-          <p className="font-crimson italic" style={{ color: "#7a5a22" }}>
-            Retrieving the records...
-          </p>
+          <div
+            style={{ columns: "4 300px", gap: "1.25rem" }}
+          >
+            <NoteCardSkeleton />
+            <NoteCardSkeleton />
+            <NoteCardSkeleton />
+            <NoteCardSkeleton />
+          </div>
         )}
         {feedError && (
           <p className="font-crimson italic" style={{ color: "#8a2510" }}>
@@ -990,6 +287,16 @@ const HomePage = () => {
         )}
 
         <section className="w-full">
+          {!feedLoading && isSearching && displayedNotes.length === 0 && (
+            <div className="py-20 text-center">
+              <h3 className="font-im-fell text-2xl italic" style={{ color: "#5a3210" }}>
+                The archives contain no records of &quot;{searchState.query}&quot;.
+              </h3>
+              <p className="font-crimson mt-2 text-[18px]" style={{ color: "#8a6a30" }}>
+                Perhaps the slight was too petty, or the spelling was incorrect.
+              </p>
+            </div>
+          )}
           <div
             className="transition-all duration-300 ease-out"
             style={{
