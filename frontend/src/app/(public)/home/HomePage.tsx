@@ -8,10 +8,15 @@ import {
   Heart,
   LoaderCircle,
   MessageCircle,
+  Search,
   Send,
   SmilePlus,
   X,
 } from "lucide-react";
+import { searchNotes, clearSearch, setSearchQuery } from "@/features/search/searchSlice";
+import { useDebounce } from "@/hooks/useDebounce";
+import NoteCardSkeleton from "@/components/NoteCardSkeleton";
+import toast from "react-hot-toast";
 import { useAppDispatch } from "@/app/hook/dispatch";
 import {
   addComment,
@@ -625,6 +630,7 @@ const HomePage = () => {
   );
   const { accessToken, user } = useSelector((state: RootState) => state.auth);
   const commentsState = useSelector((state: RootState) => state.comments);
+  const searchState = useSelector((state: RootState) => state.search);
   const topNotesByEmoji = useSelector(
     (state: RootState) => state.getTopNotesByEmoji,
   );
@@ -641,16 +647,49 @@ const HomePage = () => {
   const [isEmojiMenuOpen, setIsEmojiMenuOpen] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const emojiMenuRef = useRef<HTMLDivElement | null>(null);
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const debouncedSearch = useDebounce(searchInput, 400);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchAbortControllerRef = useRef<AbortController | null>(null);
 
-  const displayedNotes = selectedEmoji
-    ? topNotesByEmoji.data.map((item) => item.note)
-    : notes;
+  const isSearching = Boolean(searchState.query);
+  const displayedNotes = isSearching
+    ? searchState.results
+    : selectedEmoji
+      ? topNotesByEmoji.data.map((item) => item.note)
+      : notes;
   const activeNote =
     displayedNotes.find((note) => note._id === activeCommentNoteId) ?? null;
   const isCommentPanelOpen = Boolean(activeCommentNoteId);
-  const hasMore = count === NOTES_PER_PAGE;
-  const feedLoading = selectedEmoji ? topNotesByEmoji.loading : loading;
-  const feedError = selectedEmoji ? topNotesByEmoji.error : error;
+  const hasMore = isSearching ? searchState.hasMore : count === NOTES_PER_PAGE;
+  const feedLoading = isSearching
+    ? searchState.loading
+    : selectedEmoji ? topNotesByEmoji.loading : loading;
+  const feedError = isSearching
+    ? searchState.error
+    : selectedEmoji ? topNotesByEmoji.error : error;
+
+  // Debounced search: fires 400ms after user stops typing, aborts stale requests
+  useEffect(() => {
+    searchAbortControllerRef.current?.abort();
+
+    if (debouncedSearch.trim() === "") {
+      dispatch(clearSearch());
+      return;
+    }
+
+    dispatch(setSearchQuery(debouncedSearch.trim()));
+    searchAbortControllerRef.current = new AbortController();
+
+    dispatch(searchNotes({ query: debouncedSearch.trim(), page: 1 })).then((action) => {
+      if (searchNotes.rejected.match(action) && action.payload && action.payload !== "aborted") {
+        toast.error(action.payload as string);
+      }
+    });
+
+    return () => { searchAbortControllerRef.current?.abort(); };
+  }, [debouncedSearch, dispatch]);
 
   useEffect(() => {
     if (!accessToken || user) {
@@ -977,11 +1016,82 @@ const HomePage = () => {
         </div>
       </div>
 
+      {/* Inline Search Bar — sits below the filter bar */}
+      <div
+        className="flex items-center gap-2 px-4 py-2 sm:px-6 lg:px-8"
+        style={{ borderBottom: "1px solid rgba(180,130,40,0.1)" }}
+      >
+        <div
+          className={`relative flex items-center overflow-hidden transition-all duration-300 ease-out ${
+            isSearchExpanded ? "w-56 opacity-100" : "w-0 opacity-0"
+          }`}
+        >
+          <input
+            ref={searchInputRef}
+            type="text"
+            placeholder="Search the ledger..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                setIsSearchExpanded(false);
+                setSearchInput("");
+                dispatch(clearSearch());
+              }
+            }}
+            className="font-crimson w-full rounded-sm px-3 py-1.5 text-sm outline-none"
+            style={{
+              background: "rgba(180,130,40,0.08)",
+              border: "1px solid rgba(180,130,40,0.25)",
+              color: "#3a2008",
+            }}
+          />
+          {searchInput && (
+            <button
+              type="button"
+              onClick={() => { setSearchInput(""); dispatch(clearSearch()); }}
+              className="absolute right-2 top-1/2 -translate-y-1/2"
+              style={{ color: "#8a6a30" }}
+              aria-label="Clear search"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            const next = !isSearchExpanded;
+            setIsSearchExpanded(next);
+            if (next) {
+              setTimeout(() => searchInputRef.current?.focus(), 50);
+            } else {
+              setSearchInput("");
+              dispatch(clearSearch());
+            }
+          }}
+          className="font-special-elite flex h-[38px] w-[38px] items-center justify-center rounded-sm transition hover:scale-105"
+          style={{
+            border: `1px solid ${isSearchExpanded ? "rgba(180,130,40,0.6)" : "rgba(180,130,40,0.25)"}`,
+            background: isSearchExpanded ? "rgba(180,130,40,0.12)" : "transparent",
+            color: "#8a6a30",
+          }}
+          aria-label="Toggle search"
+        >
+          <Search className="h-4 w-4" />
+        </button>
+      </div>
+
       <div className="w-full px-4 py-6 sm:px-6 lg:px-8">
         {feedLoading && displayedNotes.length === 0 && (
-          <p className="font-crimson italic" style={{ color: "#7a5a22" }}>
-            Retrieving the records...
-          </p>
+          <div
+            style={{ columns: "4 300px", gap: "1.25rem" }}
+          >
+            <NoteCardSkeleton />
+            <NoteCardSkeleton />
+            <NoteCardSkeleton />
+            <NoteCardSkeleton />
+          </div>
         )}
         {feedError && (
           <p className="font-crimson italic" style={{ color: "#8a2510" }}>
@@ -990,6 +1100,16 @@ const HomePage = () => {
         )}
 
         <section className="w-full">
+          {!feedLoading && isSearching && displayedNotes.length === 0 && (
+            <div className="py-20 text-center">
+              <h3 className="font-im-fell text-2xl italic" style={{ color: "#5a3210" }}>
+                The archives contain no records of &quot;{searchState.query}&quot;.
+              </h3>
+              <p className="font-crimson mt-2 text-[18px]" style={{ color: "#8a6a30" }}>
+                Perhaps the slight was too petty, or the spelling was incorrect.
+              </p>
+            </div>
+          )}
           <div
             className="transition-all duration-300 ease-out"
             style={{
