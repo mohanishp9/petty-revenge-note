@@ -28,7 +28,8 @@ app.use(
             "http://localhost:3000",
             "http://localhost:3001",
             "http://localhost:3002",
-            "https://petty-revenge-note.vercel.app"
+            "https://petty-revenge-note.vercel.app",
+            "https://admin-panel-petty-note.vercel.app"
         ],
         credentials: true,
     })
