@@ -7,9 +7,10 @@
   "scripts": {
     "backend": "npm run dev --prefix backend",
     "frontend": "npm run dev --prefix frontend",
-    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
-    "build": "npm run build --prefix backend && npm run build --prefix frontend",
-    "lint": "npm run lint --prefix backend && npm run lint --prefix frontend"
+    "admin": "npm run dev --prefix admin",
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\" \"npm run admin\"",
+    "build": "npm run build --prefix backend && npm run build --prefix frontend && npm run build --prefix admin",
+    "lint": "npm run lint --prefix backend && npm run lint --prefix frontend && npm run lint --prefix admin"
   },
   "keywords": [],
   "author": "Mohanish Pingale",

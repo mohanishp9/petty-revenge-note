@@ -31,6 +31,10 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>({
         minlength: 6,
         select: false
     },
+    isBanned: {
+        type: Boolean,
+        default: false
+    }
 },
     {
         timestamps: true

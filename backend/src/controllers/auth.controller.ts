@@ -233,6 +233,13 @@ const loginUserController = asyncHandler(async (req: Request, res: Response) => 
         });
     }
 
+    if (user.isBanned) {
+        return res.status(403).json({
+            success: false,
+            message: "Your account has been banned.",
+        });
+    }
+
     if (await user.comparePassword(password)) {
         // Create access token
         const accessToken = generateAccessToken(user._id.toString());
@@ -289,6 +296,13 @@ const refreshTokenController = asyncHandler(async (req: Request, res: Response) 
             success: false,
             message: "User not found",
         })
+    }
+
+    if (user.isBanned) {
+        return res.status(403).json({
+            success: false,
+            message: "Your account has been banned.",
+        });
     }
 
     const accessToken = generateAccessToken(user._id.toString());
