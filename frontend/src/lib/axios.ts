@@ -18,3 +18,15 @@ api.interceptors.request.use((config) => {
     }
     return config;
 });
+
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 503) {
+            if (typeof window !== "undefined" && window.location.pathname !== "/maintenance") {
+                window.location.href = "/maintenance";
+            }
+        }
+        return Promise.reject(error);
+    }
+);

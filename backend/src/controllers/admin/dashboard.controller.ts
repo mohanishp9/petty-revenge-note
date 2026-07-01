@@ -10,12 +10,12 @@ import AuditLog from "../../models/AuditLog.model";
 // @route GET /api/admin/dashboard/stats
 // @access Private (Admin)
 export const getDashboardStats = asyncHandler(async (_req: Request, res: Response) => {
-    // Calculate 30 days ago date
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    thirtyDaysAgo.setHours(0, 0, 0, 0);
+    // Calculate 15 days ago date
+    const fifteenDaysAgo = new Date();
+    fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+    fifteenDaysAgo.setHours(0, 0, 0, 0);
 
-    const matchStage = { $match: { createdAt: { $gte: thirtyDaysAgo } } };
+    const matchStage = { $match: { createdAt: { $gte: fifteenDaysAgo } } };
     const groupStage = {
         $group: {
             _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
@@ -34,9 +34,9 @@ export const getDashboardStats = asyncHandler(async (_req: Request, res: Respons
         AuditLog.find().sort("-createdAt").limit(50).populate("adminId", "name email").lean(),
     ]);
 
-    // Build array of last 30 days to ensure there are no gaps
+    // Build array of last 15 days to ensure there are no gaps
     const chartData = [];
-    for (let i = 29; i >= 0; i--) {
+    for (let i = 14; i >= 0; i--) {
         const d = new Date();
         d.setDate(d.getDate() - i);
         const dateStr = d.toISOString().split('T')[0];

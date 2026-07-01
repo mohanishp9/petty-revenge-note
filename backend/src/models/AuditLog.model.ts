@@ -20,7 +20,7 @@ const auditLogSchema = new Schema<AuditLogDocument>(
         action: {
             type: String,
             required: true,
-            enum: ["BAN_USER", "UNBAN_USER", "DELETE_USER", "DELETE_NOTE", "DELETE_COMMENT"],
+            enum: ["BAN_USER", "UNBAN_USER", "DELETE_USER", "DELETE_NOTE", "DELETE_COMMENT", "UPDATE_SETTINGS"],
         },
         targetId: {
             type: String,
@@ -29,7 +29,7 @@ const auditLogSchema = new Schema<AuditLogDocument>(
         targetModel: {
             type: String,
             required: true,
-            enum: ["User", "Note", "Comment"],
+            enum: ["User", "Note", "Comment", "SystemSettings"],
         },
         details: {
             type: String,

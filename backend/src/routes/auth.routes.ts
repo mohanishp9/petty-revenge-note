@@ -12,13 +12,16 @@ import {
 } from "../controllers/auth.controller";
 import { protect } from "../middleware/auth.middleware";
 import { otpRequestLimiter } from "../middleware/rateLimit.middleware";
+import { checkMaintenanceMode, checkSignupsEnabled } from "../middleware/systemSettings.middleware";
 
 const router = express.Router();
 
+router.use(checkMaintenanceMode);
+
 router.post("/refresh", refreshTokenController);
-router.post("/register/initiate", otpRequestLimiter, initiateRegistration);
-router.post("/register/resend",   otpRequestLimiter, resendOtp);
-router.post("/register/verify",   verifyRegistrationOtp);
+router.post("/register/initiate", checkSignupsEnabled, otpRequestLimiter, initiateRegistration);
+router.post("/register/resend",   checkSignupsEnabled, otpRequestLimiter, resendOtp);
+router.post("/register/verify",   checkSignupsEnabled, verifyRegistrationOtp);
 router.post("/login",   loginUserController);
 router.post("/logout",  logoutUserController);
 router.get("/profile",  protect, getCurrentUserProfileController);

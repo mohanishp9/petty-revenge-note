@@ -8,6 +8,7 @@ import { RootState } from "@/store/store";
 import { Users, FileText, MessageSquare, Heart, RefreshCcw } from "lucide-react";
 import { AnalyticsChart } from "@/components/ui/AnalyticsChart";
 import { AuditFeed } from "@/components/ui/AuditFeed";
+import { SystemControls } from "@/components/ui/SystemControls";
 
 export default function DashboardPage() {
     const dispatch = useAppDispatch();
@@ -84,7 +85,8 @@ export default function DashboardPage() {
                 <div className="lg:col-span-2">
                     <AnalyticsChart data={chartData} />
                 </div>
-                <div className="lg:col-span-1">
+                <div className="lg:col-span-1 space-y-8">
+                    <SystemControls />
                     <AuditFeed logs={auditLogs} />
                 </div>
             </div>
