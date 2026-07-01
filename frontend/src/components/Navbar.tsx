@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import React, { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut, ShieldUser } from "lucide-react";
@@ -68,45 +69,16 @@ const Navbar = () => {
             <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6" style={{ height: 64 }}>
 
                 {/* Logo */}
-                <Link href="/home" className="flex items-center gap-2.5 no-underline">
-                    <div
-                        className="flex h-[42px] w-[42px] flex-shrink-0 items-center justify-center"
-                        style={{
-                            background: "#2c1a06",
-                            borderRadius: 3,
-                            border: "1px solid rgba(200,160,80,0.4)",
-                            fontFamily: "var(--font-special-elite), monospace",
-                            fontSize: 11,
-                            letterSpacing: "0.1em",
-                            color: "#f0dda0",
-                        }}
-                    >
-                        PR
-                    </div>
-                    <div>
-                        <p
-                            style={{
-                                fontFamily: "var(--font-special-elite), monospace",
-                                fontSize: 9,
-                                letterSpacing: "0.22em",
-                                textTransform: "uppercase",
-                                color: "#8a6030",
-                            }}
-                        >
-                            Petty Revenge
-                        </p>
-                        <p
-                            style={{
-                                fontFamily: "var(--font-im-fell), serif",
-                                fontSize: 17,
-                                color: "#2c1a06",
-                                fontStyle: "italic",
-                                lineHeight: 1.1,
-                            }}
-                        >
-                            Notes
-                        </p>
-                    </div>
+                <Link href="/home" className="flex items-center gap-2.5 no-underline hover:opacity-90 transition-opacity">
+                    <Image
+                        src="/Petty_Revenge_Note.webp"
+                        alt="Petty Revenge Notes Logo"
+                        width={140}
+                        height={45}
+                        style={{ height: '42px', width: 'auto' }}
+                        className="object-contain"
+                        priority
+                    />
                 </Link>
 
                 {/* Nav links */}
