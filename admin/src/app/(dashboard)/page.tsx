@@ -7,10 +7,11 @@ import { fetchDashboardStats } from "@/features/dashboard/dashboardSlice";
 import { RootState } from "@/store/store";
 import { Users, FileText, MessageSquare, Heart, RefreshCcw } from "lucide-react";
 import { AnalyticsChart } from "@/components/ui/AnalyticsChart";
+import { AuditFeed } from "@/components/ui/AuditFeed";
 
 export default function DashboardPage() {
     const dispatch = useAppDispatch();
-    const { stats, chartData, loading, error } = useSelector((state: RootState) => state.dashboard);
+    const { stats, chartData, auditLogs, loading, error } = useSelector((state: RootState) => state.dashboard);
 
     useEffect(() => {
         dispatch(fetchDashboardStats());
@@ -79,8 +80,13 @@ export default function DashboardPage() {
                 })}
             </div>
 
-            <div className="mt-8">
-                <AnalyticsChart data={chartData} />
+            <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
+                <div className="lg:col-span-2">
+                    <AnalyticsChart data={chartData} />
+                </div>
+                <div className="lg:col-span-1">
+                    <AuditFeed logs={auditLogs} />
+                </div>
             </div>
         </div>
     );

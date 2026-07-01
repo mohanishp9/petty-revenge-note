@@ -4,6 +4,7 @@ import { asyncHandler } from "../../utils/asyncHandler";
 import Comment from "../../models/Comment.model";
 import Note from "../../models/Note.model";
 import Reaction from "../../models/Reaction.model";
+import AuditLog from "../../models/AuditLog.model";
 
 // @desc Get all comments for moderation
 // @route GET /api/admin/comments
@@ -89,6 +90,15 @@ export const deleteCommentAdmin = asyncHandler(async (req: Request, res: Respons
 
         // 2. Delete the comment itself
         await Comment.deleteOne({ _id: comment._id }).session(session);
+
+        // 3. Create Audit Log
+        await AuditLog.create([{
+            adminId: req.adminUser!._id,
+            action: "DELETE_COMMENT",
+            targetId: commentId as string,
+            targetModel: "Comment",
+            details: `Admin ${req.adminUser!.name} purged a comment: "${comment.text.substring(0, 30)}..."`,
+        }], { session });
 
         await session.commitTransaction();
         session.endSession();

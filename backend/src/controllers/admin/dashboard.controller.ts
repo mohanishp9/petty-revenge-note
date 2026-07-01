@@ -4,6 +4,7 @@ import User from "../../models/User.model";
 import Note from "../../models/Note.model";
 import Comment from "../../models/Comment.model";
 import Reaction from "../../models/Reaction.model";
+import AuditLog from "../../models/AuditLog.model";
 
 // @desc Get high-level stats for the admin dashboard
 // @route GET /api/admin/dashboard/stats
@@ -22,7 +23,7 @@ export const getDashboardStats = asyncHandler(async (_req: Request, res: Respons
         }
     };
 
-    const [totalUsers, totalNotes, totalComments, totalReactions, usersByDay, notesByDay, commentsByDay] = await Promise.all([
+    const [totalUsers, totalNotes, totalComments, totalReactions, usersByDay, notesByDay, commentsByDay, recentAuditLogs] = await Promise.all([
         User.countDocuments(),
         Note.countDocuments(),
         Comment.countDocuments(),
@@ -30,6 +31,7 @@ export const getDashboardStats = asyncHandler(async (_req: Request, res: Respons
         User.aggregate([matchStage, groupStage]),
         Note.aggregate([matchStage, groupStage]),
         Comment.aggregate([matchStage, groupStage]),
+        AuditLog.find().sort("-createdAt").limit(50).populate("adminId", "name email").lean(),
     ]);
 
     // Build array of last 30 days to ensure there are no gaps
@@ -59,6 +61,7 @@ export const getDashboardStats = asyncHandler(async (_req: Request, res: Respons
             comments: totalComments,
             reactions: totalReactions,
         },
-        chartData
+        chartData,
+        auditLogs: recentAuditLogs,
     });
 });

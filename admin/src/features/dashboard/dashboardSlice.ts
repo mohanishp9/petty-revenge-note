@@ -16,9 +16,20 @@ export interface ChartDataPoint {
     comments: number;
 }
 
+export interface AuditLog {
+    _id: string;
+    adminId: { _id: string; name: string; email: string };
+    action: string;
+    targetId: string;
+    targetModel: string;
+    details: string;
+    createdAt: string;
+}
+
 export interface DashboardState {
     stats: DashboardStats | null;
     chartData: ChartDataPoint[];
+    auditLogs: AuditLog[];
     loading: boolean;
     error: string | null;
 }
@@ -26,6 +37,7 @@ export interface DashboardState {
 const initialState: DashboardState = {
     stats: null,
     chartData: [],
+    auditLogs: [],
     loading: false,
     error: null,
 };
@@ -37,7 +49,8 @@ export const fetchDashboardStats = createAsyncThunk(
             const res = await api.get("/dashboard/stats");
             return {
                 stats: res.data.stats as DashboardStats,
-                chartData: res.data.chartData as ChartDataPoint[]
+                chartData: res.data.chartData as ChartDataPoint[],
+                auditLogs: res.data.auditLogs as AuditLog[]
             };
         } catch (error) {
             return thunkAPI.rejectWithValue(getErrorMessage(error));
@@ -59,6 +72,7 @@ const dashboardSlice = createSlice({
                 state.loading = false;
                 state.stats = action.payload.stats;
                 state.chartData = action.payload.chartData;
+                state.auditLogs = action.payload.auditLogs;
             })
             .addCase(fetchDashboardStats.rejected, (state, action) => {
                 state.loading = false;

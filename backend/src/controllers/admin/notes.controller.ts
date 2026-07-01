@@ -5,6 +5,7 @@ import Note from "../../models/Note.model";
 import Comment from "../../models/Comment.model";
 import Like from "../../models/Like.model";
 import Reaction from "../../models/Reaction.model";
+import AuditLog from "../../models/AuditLog.model";
 
 // @desc Get all notes for moderation
 // @route GET /api/admin/notes
@@ -74,6 +75,15 @@ export const deleteNoteAdmin = asyncHandler(async (req: Request, res: Response) 
 
         // 5. Delete the actual note
         await Note.findByIdAndDelete(noteId).session(session);
+
+        // 6. Create Audit Log
+        await AuditLog.create([{
+            adminId: req.adminUser!._id,
+            action: "DELETE_NOTE",
+            targetId: noteId as string,
+            targetModel: "Note",
+            details: `Admin ${req.adminUser!.name} purged note "${note.subject}"`,
+        }], { session });
 
         await session.commitTransaction();
         session.endSession();
