@@ -37,6 +37,11 @@ const protect = asyncHandler(async (req: Request, res: Response, next: NextFunct
         throw new Error("User not found");
     }
 
+    if (user.isBanned) {
+        res.status(403);
+        throw new Error("Your account has been banned");
+    }
+
     req.user = user;
     next();
 });

@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  
+  /* Modern Terminal Theme Colors */
+  --color-term-bg: #000000;
+  --color-term-surface: #0a0a0a;
+  --color-term-border: #1f1f1f;
+  
+  --color-term-text-primary: #ffffff;
+  --color-term-text-secondary: #888888;
+  
+  --color-term-accent-cyan: #06b6d4;
+  --color-term-accent-indigo: #6366f1;
+  
+  --color-term-status-red: #ff453a;
+  --color-term-status-green: #32d74b;
+}
+
+@layer base {
+  body {
+    @apply bg-[var(--color-term-bg)] text-[var(--color-term-text-primary)] font-sans antialiased;
+    /* Optional grid background for terminal feel */
+    background-image: linear-gradient(var(--color-term-border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--color-term-border) 1px, transparent 1px);
+    background-size: 100px 100px;
+    background-position: -1px -1px;
+  }
+}
+
+/* Custom Utilities for the pulse gradient */
+@layer utilities {
+  .bg-pulse-gradient {
+    @apply bg-gradient-to-r from-cyan-400 to-indigo-500;
+  }
+  .text-pulse-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-indigo-500;
+  }
+  .border-pulse {
+    position: relative;
+  }
+  .border-pulse::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: linear-gradient(to right, #06b6d4, #6366f1);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}

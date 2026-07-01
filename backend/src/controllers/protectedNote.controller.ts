@@ -231,6 +231,12 @@ const addCommentController = asyncHandler(async (req: Request, res: Response) =>
 
     const { noteId, text } = parsed.data;
 
+    // Guard: verify the note still exists before creating a comment
+    const noteExists = await Note.exists({ _id: noteId });
+    if (!noteExists) {
+        return res.status(404).json({ message: "Note not found or has been deleted" });
+    }
+
     const comment = await Comment.create({
         noteId: new mongoose.Types.ObjectId(noteId),
         user: userId,

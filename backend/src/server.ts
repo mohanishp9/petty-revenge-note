@@ -8,6 +8,8 @@ import authRoutes from "./routes/auth.routes";
 import publicNoteRoutes from "./routes/publicNote.route"
 import protectedNoteRoutes from "./routes/protectedNote.route";
 import userRoutes from "./routes/user.routes";
+import adminAuthRoutes from "./routes/adminAuth.routes";
+import adminRoutes from "./routes/admin.routes";
 
 dotenv.config();
 
@@ -25,6 +27,7 @@ app.use(
         origin: [
             "http://localhost:3000",
             "http://localhost:3001",
+            "http://localhost:3002",
             "https://petty-revenge-note.vercel.app"
         ],
         credentials: true,
@@ -35,6 +38,8 @@ app.use(cookieParser());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/admin/auth", adminAuthRoutes);
+app.use("/api/admin", adminRoutes);
 app.use("/api/public/notes", publicNoteRoutes);
 app.use("/api/protected/notes", protectedNoteRoutes);
 
