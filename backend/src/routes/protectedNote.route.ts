@@ -10,14 +10,16 @@ import {
     editCommentController,
     deleteCommentController
 } from "../controllers/protectedNote.controller";
-import { apiLimiter } from "../middleware/rateLimit.middleware";
 import { protect } from "../middleware/auth.middleware";
+import { apiLimiter } from "../middleware/rateLimit.middleware";
+import { checkMaintenanceMode } from "../middleware/systemSettings.middleware";
 
 const router = express.Router();
 
-router.use(apiLimiter)
+router.use(protect);
+router.use(checkMaintenanceMode);
 
-router.post("/", protect, createNoteController)
+router.post("/", apiLimiter, createNoteController);
 router.post("/:id/like", protect, toggleLikeController)
 router.post("/:id/reaction", protect, reactionController)
 router.post("/:id/comment", protect, addCommentController)

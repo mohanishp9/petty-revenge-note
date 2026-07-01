@@ -2,8 +2,11 @@ import express from 'express';
 import { checkUsername, updateUsername, initiateEmailUpdate, verifyEmailUpdate, updatePassword, deleteAccountInitiate, deleteAccountConfirm } from '../controllers/user.controller';
 import { protect } from '../middleware/auth.middleware';
 import { apiLimiter, otpRequestLimiter } from '../middleware/rateLimit.middleware';
+import { checkMaintenanceMode } from '../middleware/systemSettings.middleware';
 
 const router = express.Router();
+
+router.use(checkMaintenanceMode);
 
 // Real-time username availability check
 router.get('/profile/check-username', protect, checkUsername);

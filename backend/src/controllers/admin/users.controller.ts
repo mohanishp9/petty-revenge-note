@@ -6,6 +6,7 @@ import Note from "../../models/Note.model";
 import Comment from "../../models/Comment.model";
 import Like from "../../models/Like.model";
 import Reaction from "../../models/Reaction.model";
+import AuditLog from "../../models/AuditLog.model";
 
 // @desc Get all public users
 // @route GET /api/admin/users
@@ -89,6 +90,14 @@ export const toggleUserBan = asyncHandler(async (req: Request, res: Response) =>
     user.isBanned = !user.isBanned;
     await user.save();
 
+    await AuditLog.create({
+        adminId: req.adminUser!._id,
+        action: user.isBanned ? "BAN_USER" : "UNBAN_USER",
+        targetId: user._id.toString(),
+        targetModel: "User",
+        details: `Admin ${req.adminUser!.name} ${user.isBanned ? 'banned' : 'unbanned'} user ${user.username} (${user.email})`,
+    });
+
     return res.status(200).json({
         success: true,
         message: `User successfully ${user.isBanned ? 'banned' : 'unbanned'}`,
@@ -142,6 +151,15 @@ export const deletePublicUser = asyncHandler(async (req: Request, res: Response)
 
         // 9. Delete the user
         await User.findByIdAndDelete(userId).session(session);
+
+        // 10. Create Audit Log
+        await AuditLog.create([{
+            adminId: req.adminUser!._id,
+            action: "DELETE_USER",
+            targetId: userId as string,
+            targetModel: "User",
+            details: `Admin ${req.adminUser!.name} permanently deleted user ${user.username} (${user.email})`,
+        }], { session });
 
         await session.commitTransaction();
         session.endSession();

@@ -54,7 +54,7 @@ export function AnalyticsChart({ data }: AnalyticsChartProps) {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h2 className="text-sm font-mono tracking-widest text-[var(--color-term-text-secondary)] uppercase">
-            30-Day Telemetry
+            15-Day Telemetry
           </h2>
           <p className="text-[10px] font-mono text-[var(--color-term-text-secondary)] mt-1">
             NETWORK VELOCITY (USERS, NOTES, COMMENTS)
