@@ -4,9 +4,10 @@ import React from "react";
 import { Loader2 } from "lucide-react";
 
 interface Column<T> {
-    header: string;
+    header: React.ReactNode | string;
     accessorKey: keyof T | string;
     cell?: (item: T) => React.ReactNode;
+    onHeaderClick?: () => void;
 }
 
 interface DataTableProps<T> {
@@ -38,9 +39,12 @@ export function DataTable<T>({
                                 <th
                                     key={i}
                                     scope="col"
-                                    className="px-4 py-3 text-left text-xs font-mono tracking-widest uppercase text-[var(--color-term-text-secondary)] border-b border-[var(--color-term-border)]"
+                                    onClick={col.onHeaderClick}
+                                    className={`px-4 py-3 text-left text-xs font-mono tracking-widest uppercase text-[var(--color-term-text-secondary)] border-b border-[var(--color-term-border)] ${col.onHeaderClick ? 'cursor-pointer hover:text-white transition-colors select-none' : ''}`}
                                 >
-                                    {col.header}
+                                    <div className="flex items-center gap-1">
+                                        {col.header}
+                                    </div>
                                 </th>
                             ))}
                         </tr>

@@ -16,8 +16,14 @@ export const getAllPublicUsers = asyncHandler(async (req: Request, res: Response
     const limit = parseInt(req.query.limit as string) || 10;
     const search = req.query.search as string || "";
     const sort = req.query.sort as string || "-createdAt";
+    const status = req.query.status as string;
 
     const query: any = {};
+    if (status === "banned") {
+        query.isBanned = true;
+    } else if (status === "active") {
+        query.isBanned = { $ne: true };
+    }
     if (search) {
         query.$or = [
             { username: { $regex: search, $options: "i" } },

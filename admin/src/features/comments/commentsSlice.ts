@@ -32,9 +32,9 @@ const initialState: CommentsState = {
 
 export const fetchComments = createAsyncThunk(
     "comments/fetchComments",
-    async ({ page, search }: { page: number; search: string }, thunkAPI) => {
+    async ({ page = 1, search = "", level = "", sort = "-createdAt" }: { page?: number; search?: string; level?: string; sort?: string }, thunkAPI) => {
         try {
-            return await fetchCommentsAPI(page, search);
+            return await fetchCommentsAPI(page, search, level, sort);
         } catch (error) {
             return thunkAPI.rejectWithValue(getErrorMessage(error));
         }

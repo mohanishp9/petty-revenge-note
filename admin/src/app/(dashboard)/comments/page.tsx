@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useSelector } from "react-redux";
-import { Search } from "lucide-react";
+import { Search, ArrowUp, ArrowDown, Filter } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { useAppDispatch } from "@/app/hook/dispatch";
@@ -16,23 +16,36 @@ export default function CommentsPage() {
     const { comments, loading, total, page, pages } = useSelector((state: RootState) => state.comments);
     
     const [searchTerm, setSearchTerm] = useState("");
+    const [levelFilter, setLevelFilter] = useState<"all" | "parent" | "reply">("all");
+    const [sortOrder, setSortOrder] = useState<"-createdAt" | "createdAt">("-createdAt");
+
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [commentToDelete, setCommentToDelete] = useState<ModerationComment | null>(null);
 
-    const loadComments = useCallback((currentPage: number, search: string) => {
-        dispatch(fetchComments({ page: currentPage, search }));
+    const loadComments = useCallback((currentPage: number, search: string, level: string, sort: string) => {
+        dispatch(fetchComments({ page: currentPage, search, level: level === "all" ? "" : level, sort }));
     }, [dispatch]);
 
     useEffect(() => {
         const delayDebounceFn = setTimeout(() => {
-            loadComments(1, searchTerm);
+            loadComments(1, searchTerm, levelFilter, sortOrder);
         }, 500);
 
         return () => clearTimeout(delayDebounceFn);
-    }, [searchTerm, loadComments]);
+    }, [searchTerm, levelFilter, sortOrder, loadComments]);
 
     const handlePageChange = (newPage: number) => {
-        loadComments(newPage, searchTerm);
+        loadComments(newPage, searchTerm, levelFilter, sortOrder);
+    };
+
+    const toggleLevelFilter = () => {
+        if (levelFilter === "all") setLevelFilter("parent");
+        else if (levelFilter === "parent") setLevelFilter("reply");
+        else setLevelFilter("all");
+    };
+
+    const toggleSortOrder = () => {
+        setSortOrder(sortOrder === "-createdAt" ? "createdAt" : "-createdAt");
     };
 
     const handleDeleteClick = (comment: ModerationComment) => {
@@ -52,9 +65,9 @@ export default function CommentsPage() {
             setCommentToDelete(null);
             
             if (comments.length === 1 && page > 1) {
-                loadComments(page - 1, searchTerm);
+                loadComments(page - 1, searchTerm, levelFilter, sortOrder);
             } else {
-                loadComments(page, searchTerm);
+                loadComments(page, searchTerm, levelFilter, sortOrder);
             }
         } else {
             toast.error(res.payload as string || "OPERATION FAILED");
@@ -90,21 +103,39 @@ export default function CommentsPage() {
             )
         },
         {
-            header: "Level",
+            header: (
+                <>
+                    Level
+                    {levelFilter === "parent" && <span className="ml-1 text-[10px] text-[var(--color-term-accent-cyan)]">[P]</span>}
+                    {levelFilter === "reply" && <span className="ml-1 text-[10px] text-[var(--color-term-text-secondary)]">[R]</span>}
+                    {levelFilter === "all" && <Filter className="ml-1 h-3 w-3 text-gray-600" />}
+                </>
+            ),
             accessorKey: "level",
+            onHeaderClick: toggleLevelFilter,
             cell: (comment: ModerationComment) => (
                 <span className={`inline-flex px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest ${
                     comment.parentCommentId 
                     ? 'border border-[var(--color-term-text-secondary)] text-[var(--color-term-text-secondary)]' 
                     : 'border border-[var(--color-term-accent-cyan)] text-[var(--color-term-accent-cyan)] bg-[#001a1a]'
                 }`}>
-                    {comment.parentCommentId ? 'REPLY' : 'TOP-LEVEL'}
+                    {comment.parentCommentId ? 'REPLY' : 'PARENT'}
                 </span>
             )
         },
         {
-            header: "Date",
+            header: (
+                <>
+                    Date
+                    {sortOrder === "createdAt" ? (
+                        <ArrowUp className="ml-1 h-3 w-3 text-[var(--color-term-accent-cyan)]" />
+                    ) : (
+                        <ArrowDown className="ml-1 h-3 w-3 text-[var(--color-term-accent-cyan)]" />
+                    )}
+                </>
+            ),
             accessorKey: "createdAt",
+            onHeaderClick: toggleSortOrder,
             cell: (comment: ModerationComment) => {
                 const date = new Date(comment.createdAt);
                 return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;

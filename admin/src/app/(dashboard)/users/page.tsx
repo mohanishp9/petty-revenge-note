@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useSelector } from "react-redux";
-import { Search } from "lucide-react";
+import { Search, Check, X, ArrowUp, ArrowDown } from "lucide-react";
 import { useAppDispatch } from "@/app/hook/dispatch";
 import { fetchUsers, PublicUser } from "@/features/users/usersSlice";
 import { RootState } from "@/store/store";
@@ -13,21 +13,33 @@ export default function UsersPage() {
     const dispatch = useAppDispatch();
     const { users, loading, total, page, pages } = useSelector((state: RootState) => state.users);
     const [searchTerm, setSearchTerm] = useState("");
+    const [statusFilter, setStatusFilter] = useState<"all" | "active" | "banned">("all");
+    const [sortOrder, setSortOrder] = useState<"-createdAt" | "createdAt">("-createdAt");
 
-    const loadUsers = useCallback((currentPage: number, search: string) => {
-        dispatch(fetchUsers({ page: currentPage, search }));
+    const loadUsers = useCallback((currentPage: number, search: string, status: string, sort: string) => {
+        dispatch(fetchUsers({ page: currentPage, search, status: status === "all" ? "" : status, sort }));
     }, [dispatch]);
 
     useEffect(() => {
         const delayDebounceFn = setTimeout(() => {
-            loadUsers(1, searchTerm);
+            loadUsers(1, searchTerm, statusFilter, sortOrder);
         }, 500);
 
         return () => clearTimeout(delayDebounceFn);
-    }, [searchTerm, loadUsers]);
+    }, [searchTerm, statusFilter, sortOrder, loadUsers]);
 
     const handlePageChange = (newPage: number) => {
-        loadUsers(newPage, searchTerm);
+        loadUsers(newPage, searchTerm, statusFilter, sortOrder);
+    };
+
+    const toggleStatusFilter = () => {
+        if (statusFilter === "all") setStatusFilter("active");
+        else if (statusFilter === "active") setStatusFilter("banned");
+        else setStatusFilter("all");
+    };
+
+    const toggleSortOrder = () => {
+        setSortOrder(sortOrder === "-createdAt" ? "createdAt" : "-createdAt");
     };
 
     const columns = [
@@ -50,8 +62,15 @@ export default function UsersPage() {
             accessorKey: "email"
         },
         {
-            header: "Status",
+            header: (
+                <>
+                    Status
+                    {statusFilter === "active" && <Check className="ml-1 h-3 w-3 text-[var(--color-term-status-green)]" />}
+                    {statusFilter === "banned" && <X className="ml-1 h-3 w-3 text-[var(--color-term-status-red)]" />}
+                </>
+            ),
             accessorKey: "isBanned",
+            onHeaderClick: toggleStatusFilter,
             cell: (user: PublicUser) => (
                 <span className={`inline-flex px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest ${
                     user.isBanned 
@@ -63,8 +82,18 @@ export default function UsersPage() {
             )
         },
         {
-            header: "Joined",
+            header: (
+                <>
+                    Joined
+                    {sortOrder === "createdAt" ? (
+                        <ArrowUp className="ml-1 h-3 w-3 text-[var(--color-term-accent-cyan)]" />
+                    ) : (
+                        <ArrowDown className="ml-1 h-3 w-3 text-[var(--color-term-accent-cyan)]" />
+                    )}
+                </>
+            ),
             accessorKey: "createdAt",
+            onHeaderClick: toggleSortOrder,
             cell: (user: PublicUser) => {
                 const date = new Date(user.createdAt);
                 return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;

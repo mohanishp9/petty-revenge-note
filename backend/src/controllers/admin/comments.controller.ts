@@ -14,8 +14,15 @@ export const getAllCommentsAdmin = asyncHandler(async (req: Request, res: Respon
     const limit = parseInt(req.query.limit as string) || 10;
     const search = req.query.search as string || "";
     const sort = req.query.sort as string || "-createdAt";
+    const level = req.query.level as string;
 
     const query: any = {};
+    if (level === "parent") {
+        query.parentCommentId = null;
+    } else if (level === "reply") {
+        query.parentCommentId = { $ne: null };
+    }
+
     if (search) {
         query.text = { $regex: search, $options: "i" };
     }
