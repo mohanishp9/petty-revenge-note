@@ -45,9 +45,9 @@ const initialState: UsersState = {
 
 export const fetchUsers = createAsyncThunk(
     "users/fetchUsers",
-    async ({ page = 1, search = "" }: { page?: number; search?: string }, thunkAPI) => {
+    async ({ page = 1, search = "", status = "", sort = "-createdAt" }: { page?: number; search?: string; status?: string; sort?: string }, thunkAPI) => {
         try {
-            const res = await api.get(`/users?page=${page}&search=${search}`);
+            const res = await api.get(`/users?page=${page}&search=${search}&status=${status}&sort=${sort}`);
             return res.data as FetchUsersResponse;
         } catch (error) {
             return thunkAPI.rejectWithValue(getErrorMessage(error));
