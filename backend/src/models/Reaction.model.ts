@@ -1,5 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import type { ReactionTypes } from "../types/reaction.types";
+import { VALID_EMOJIS } from "../utils/constants";
 
 const reactionSchema = new Schema<ReactionTypes>({
     user: {
@@ -16,8 +17,8 @@ const reactionSchema = new Schema<ReactionTypes>({
     },
     emoji: {
         type: String,
-        enum: ["😂", "😡", "😳", "😭"],
-        default: "😂",
+        enum: VALID_EMOJIS,
+        default: VALID_EMOJIS[0],
         required: true,
     }
 }, { timestamps: true });

@@ -53,11 +53,11 @@ const getNotesController = asyncHandler(async (req: Request, res: Response) => {
     const noteIds = notes.map(n => n._id);
 
     const likes = await Like.find({
-        userId,
-        noteId: { $in: noteIds },
+        user: userId,
+        note: { $in: noteIds }
     }).lean();
 
-    const likedSet = new Set(likes.map(l => l.noteId.toString()));
+    const likedSet = new Set(likes.map(l => l.note.toString()));
 
     const reactions = await Reaction.find({
         user: userId,
@@ -132,10 +132,10 @@ const getTopNotesByEmojiController = asyncHandler(async (req: Request, res: Resp
         const noteIds = notes.map(n => n.note._id);
 
         const likes = await Like.find({
-            userId,
-            noteId: { $in: noteIds },
+            user: userId,
+            note: { $in: noteIds },
         }).lean();
-        const likedSet = new Set(likes.map(l => l.noteId.toString()));
+        const likedSet = new Set(likes.map(l => l.note.toString()));
 
         const reactions = await Reaction.find({
             user: userId,
@@ -155,7 +155,7 @@ const getTopNotesByEmojiController = asyncHandler(async (req: Request, res: Resp
             count: item.count,
             note: {
                 ...item.note,
-                hasLiked: likedSet.has(item.note._id.toString()),
+                hasLiked: likes.some(like => like.note.toString() === item.note._id.toString()),
                 isSaved: savedSet.has(item.note._id.toString()),
                 userReaction: reactionMap.get(item.note._id.toString()) || null
             }
@@ -289,45 +289,73 @@ const searchNotesController = asyncHandler(async (req: Request, res: Response) =
         }
     ];
 
-    // For total count without paginating
-    const countPipeline = [...pipeline, { $count: "total" }];
-    const countResult = await Note.aggregate(countPipeline);
-    const total = countResult[0]?.total || 0;
+    let total = 0;
+    let notes: any[] = [];
 
-    // Add pagination and lookup to the main pipeline
-    pipeline.push(
-        { $skip: skip },
-        { $limit: limit },
-        {
-            $lookup: {
-                from: "users",
-                localField: "user",
-                foreignField: "_id",
-                as: "userDoc"
-            }
-        },
-        {
-            $unwind: {
-                path: "$userDoc",
-                preserveNullAndEmptyArrays: true
-            }
-        },
-        {
-            $addFields: {
-                user: {
-                    _id: "$userDoc._id",
-                    username: "$userDoc.username"
+    try {
+        // For total count without paginating
+        const countPipeline = [...pipeline, { $count: "total" }];
+        const countResult = await Note.aggregate(countPipeline);
+        total = countResult[0]?.total || 0;
+
+        // Add pagination and lookup to the main pipeline
+        pipeline.push(
+            { $skip: skip },
+            { $limit: limit },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "user",
+                    foreignField: "_id",
+                    as: "userDoc"
+                }
+            },
+            {
+                $unwind: {
+                    path: "$userDoc",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $addFields: {
+                    user: {
+                        _id: "$userDoc._id",
+                        username: "$userDoc.username"
+                    }
+                }
+            },
+            {
+                $project: {
+                    userDoc: 0
                 }
             }
-        },
-        {
-            $project: {
-                userDoc: 0
-            }
-        }
-    );
+        );
 
-    const notes = await Note.aggregate(pipeline);
+        notes = await Note.aggregate(pipeline);
+    } catch (error: any) {
+        // Fallback to RegExp if Atlas Search fails (e.g. index not created, not on Atlas)
+        const regex = new RegExp(searchStr, "i");
+        const fallbackQuery = {
+            $or: [
+                { subject: { $regex: regex } },
+                { content: { $regex: regex } }
+            ]
+        };
+
+        total = await Note.countDocuments(fallbackQuery);
+        const fallbackNotes = await Note.find(fallbackQuery)
+            .skip(skip)
+            .limit(limit)
+            .populate("user", "username")
+            .lean();
+
+        // Format to match expected aggregate output
+        notes = fallbackNotes.map(note => ({
+            ...note,
+            score: 0,
+            highlights: []
+        }));
+    }
 
     const userId = req.user?._id;
     let enrichedNotes = notes;
@@ -336,10 +364,10 @@ const searchNotesController = asyncHandler(async (req: Request, res: Response) =
         const noteIds = notes.map(n => n._id);
 
         const likes = await Like.find({
-            userId,
-            noteId: { $in: noteIds },
+            user: userId,
+            note: { $in: noteIds },
         }).lean();
-        const likedSet = new Set(likes.map(l => l.noteId.toString()));
+        const likedSet = new Set(likes.map(l => l.note.toString()));
 
         const reactions = await Reaction.find({
             user: userId,
@@ -420,7 +448,7 @@ const getSingleNoteController = asyncHandler(async (req: Request, res: Response)
     let userReaction = null;
 
     if (userId) {
-        const like = await Like.findOne({ userId, noteId }).lean();
+        const like = await Like.findOne({ user: userId, note: noteId }).lean();
         if (like) hasLiked = true;
 
         const reaction = await Reaction.findOne({ user: userId, note: noteId }).lean();

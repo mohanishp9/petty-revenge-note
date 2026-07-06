@@ -138,7 +138,7 @@ export const deletePublicUser = asyncHandler(async (req: Request, res: Response)
         await Comment.deleteMany({ noteId: { $in: noteIds } }).session(session);
 
         // 3. Delete ALL likes on those notes (field is noteId not note)
-        await Like.deleteMany({ noteId: { $in: noteIds } }).session(session);
+        await Like.deleteMany({ note: { $in: noteIds } }).session(session);
 
         // 4. Delete ALL reactions on those notes
         await Reaction.deleteMany({ note: { $in: noteIds } }).session(session);
@@ -150,7 +150,7 @@ export const deletePublicUser = asyncHandler(async (req: Request, res: Response)
         await Comment.deleteMany({ user: userId }).session(session);
 
         // 7. Delete any remaining likes the user cast on other notes (field is userId)
-        await Like.deleteMany({ userId: userId }).session(session);
+        await Like.deleteMany({ user: userId }).session(session);
 
         // 8. Delete any remaining reactions the user cast on other notes
         await Reaction.deleteMany({ user: userId }).session(session);

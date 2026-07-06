@@ -1,10 +1,11 @@
 import { Note } from "@/features/publicNote/types";
+import { ValidEmoji } from "@/utils/constants";
 
 export interface CreateNoteParams {
     showUsername: boolean;
     subject: string;
     content: string;
-    categoryEmoji: "😂" | "😡" | "😳" | "😭";
+    categoryEmoji: ValidEmoji;
 }
 
 export interface CreateNoteResponse {

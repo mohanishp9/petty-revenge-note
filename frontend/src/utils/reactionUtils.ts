@@ -1,4 +1,5 @@
-export const DEFAULT_REACTIONS = ["😂", "😡", "😳", "😭"] as const;
+import { VALID_EMOJIS } from "./constants";
+export const DEFAULT_REACTIONS = VALID_EMOJIS;
 
 export const getReactionTotal = (reactionsCount: Record<string, number>) =>
   Object.values(reactionsCount).reduce((sum, count) => sum + count, 0);
