@@ -45,7 +45,7 @@ const initiateRegistration = asyncHandler(async (req: Request, res: Response) =>
     if (userExist) {
         return res.status(409).json({
             success: false,
-            message: userExist.email === email ? "Email already registered" : "Username already taken",
+            message: "User already exists",
         });
     }
 

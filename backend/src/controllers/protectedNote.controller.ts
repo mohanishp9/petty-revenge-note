@@ -237,21 +237,34 @@ const addCommentController = asyncHandler(async (req: Request, res: Response) =>
         return res.status(404).json({ message: "Note not found or has been deleted" });
     }
 
-    const comment = await Comment.create({
-        noteId: new mongoose.Types.ObjectId(noteId),
-        user: userId,
-        text,
-    });
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    await Note.updateOne(
-        { _id: noteId },
-        { $inc: { commentsCount: 1 } }
-    );
+    try {
+        const comment = await Comment.create([{
+            noteId: new mongoose.Types.ObjectId(noteId),
+            user: userId,
+            text,
+        }], { session });
 
-    res.status(201).json({
-        success: true,
-        comment,
-    });
+        await Note.updateOne(
+            { _id: noteId },
+            { $inc: { commentsCount: 1 } },
+            { session }
+        );
+
+        await session.commitTransaction();
+
+        res.status(201).json({
+            success: true,
+            comment: comment[0],
+        });
+    } catch (err) {
+        await session.abortTransaction();
+        throw err;
+    } finally {
+        await session.endSession();
+    }
 });
 
 // @desc Reply to a Comment
@@ -290,29 +303,36 @@ const addReplyController = asyncHandler(async (req: Request, res: Response) => {
         });
     }
 
-    const reply = await Comment.create({
-        noteId: parentComment.noteId,
-        user: userId,
-        text,
-        parentCommentId: new mongoose.Types.ObjectId(commentId),
-    });
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    // Increment parent comment's replies count
-    await Comment.updateOne(
-        { _id: commentId },
-        { $inc: { repliesCount: 1 } }
-    );
+    try {
+        const reply = await Comment.create([{
+            noteId: parentComment.noteId,
+            user: userId,
+            text,
+            parentCommentId: new mongoose.Types.ObjectId(commentId),
+        }], { session });
 
-    // Increment note's comments count
-    // await Note.updateOne(
-    //     { _id: parentComment.noteId },
-    //     { $inc: { commentsCount: 1 } }
-    // );
+        // Increment parent comment's replies count
+        await Comment.updateOne(
+            { _id: commentId },
+            { $inc: { repliesCount: 1 } },
+            { session }
+        );
 
-    res.status(201).json({
-        success: true,
-        reply,
-    });
+        await session.commitTransaction();
+
+        res.status(201).json({
+            success: true,
+            reply: reply[0],
+        });
+    } catch (err) {
+        await session.abortTransaction();
+        throw err;
+    } finally {
+        await session.endSession();
+    }
 });
 
 const getMyNotes = asyncHandler(async (req: Request, res: Response) => {
