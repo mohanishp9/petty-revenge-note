@@ -49,8 +49,16 @@ export default function ForgotPasswordPage() {
             toast.error("Please enter all 6 digits of the OTP.");
             return;
         }
-        if (newPassword.length < 6) {
-            toast.error("Password must be at least 6 characters.");
+        if (newPassword.length < 8) {
+            toast.error("Password must have at least 8 characters");
+            return;
+        }
+        if (!/[A-Z]/.test(newPassword)) {
+            toast.error("Password must contain at least one uppercase letter");
+            return;
+        }
+        if (!/[0-9]/.test(newPassword)) {
+            toast.error("Password must contain at least one number");
             return;
         }
 

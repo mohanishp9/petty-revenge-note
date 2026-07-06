@@ -167,6 +167,19 @@ const Register = () => {
             return;
         }
 
+        if (password.length < 8) {
+            toast.error("Password must have at least 8 characters");
+            return;
+        }
+        if (!/[A-Z]/.test(password)) {
+            toast.error("Password must contain at least one uppercase letter");
+            return;
+        }
+        if (!/[0-9]/.test(password)) {
+            toast.error("Password must contain at least one number");
+            return;
+        }
+
         const result = await dispatch(initiateRegistration({ username, email, password }));
 
         if (initiateRegistration.fulfilled.match(result)) {
