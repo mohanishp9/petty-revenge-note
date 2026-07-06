@@ -44,6 +44,9 @@ export const metadata: Metadata = {
     template: "%s | Petty Revenge Notes",
   },
   description: "The public ledger for every slight, duly recorded for posterity. Read, share, and track viral revenge notes.",
+  verification: {
+    google: "v1Cl1kqcZ2ILTRgAGFEW-ul0GdrW4FfNXyYhI-vYKv0", // Paste your code string from Google here
+  },
   openGraph: {
     title: "Petty Revenge Notes",
     description: "The public ledger for every slight, duly recorded for posterity.",
