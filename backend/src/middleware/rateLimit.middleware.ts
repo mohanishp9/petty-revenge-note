@@ -80,3 +80,25 @@ export const searchRateLimiter = rateLimit({
   },
   skipFailedRequests: false,
 });
+
+// Share API Limiter
+// Protects POST /api/public/notes/:id/share
+// Limit: 5 requests per minute per IP to prevent spam bots inflating sharesCount
+
+export const shareRateLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: new RedisStore({
+    sendCommand: ((...args: Parameters<SendCommandFn>) =>
+      redisClient.call(...(args as [string, ...string[]]))
+    ) as SendCommandFn,
+    prefix: 'rl:share:',
+  }),
+  message: {
+    success: false,
+    message: 'Too many share requests. Please try again later.',
+  },
+  skipFailedRequests: false,
+});

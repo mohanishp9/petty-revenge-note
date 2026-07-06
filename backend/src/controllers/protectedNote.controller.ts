@@ -3,6 +3,7 @@ import Note from "../models/Note.model";
 import Like from "../models/Like.model";
 import Reaction from "../models/Reaction.model";
 import Comment from "../models/Comment.model";
+import SavedNote from "../models/SavedNote.model";
 import { createNoteSchema } from "../utils/note.validator";
 import { reactionSchema } from "../utils/reaction.validator";
 import { addCommentSchema, addReplySchema, editCommentSchema, deleteCommentSchema } from "../utils/comment.validator";
@@ -237,21 +238,34 @@ const addCommentController = asyncHandler(async (req: Request, res: Response) =>
         return res.status(404).json({ message: "Note not found or has been deleted" });
     }
 
-    const comment = await Comment.create({
-        noteId: new mongoose.Types.ObjectId(noteId),
-        user: userId,
-        text,
-    });
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    await Note.updateOne(
-        { _id: noteId },
-        { $inc: { commentsCount: 1 } }
-    );
+    try {
+        const comment = await Comment.create([{
+            noteId: new mongoose.Types.ObjectId(noteId),
+            user: userId,
+            text,
+        }], { session });
 
-    res.status(201).json({
-        success: true,
-        comment,
-    });
+        await Note.updateOne(
+            { _id: noteId },
+            { $inc: { commentsCount: 1 } },
+            { session }
+        );
+
+        await session.commitTransaction();
+
+        res.status(201).json({
+            success: true,
+            comment: comment[0],
+        });
+    } catch (err) {
+        await session.abortTransaction();
+        throw err;
+    } finally {
+        await session.endSession();
+    }
 });
 
 // @desc Reply to a Comment
@@ -290,29 +304,36 @@ const addReplyController = asyncHandler(async (req: Request, res: Response) => {
         });
     }
 
-    const reply = await Comment.create({
-        noteId: parentComment.noteId,
-        user: userId,
-        text,
-        parentCommentId: new mongoose.Types.ObjectId(commentId),
-    });
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    // Increment parent comment's replies count
-    await Comment.updateOne(
-        { _id: commentId },
-        { $inc: { repliesCount: 1 } }
-    );
+    try {
+        const reply = await Comment.create([{
+            noteId: parentComment.noteId,
+            user: userId,
+            text,
+            parentCommentId: new mongoose.Types.ObjectId(commentId),
+        }], { session });
 
-    // Increment note's comments count
-    // await Note.updateOne(
-    //     { _id: parentComment.noteId },
-    //     { $inc: { commentsCount: 1 } }
-    // );
+        // Increment parent comment's replies count
+        await Comment.updateOne(
+            { _id: commentId },
+            { $inc: { repliesCount: 1 } },
+            { session }
+        );
 
-    res.status(201).json({
-        success: true,
-        reply,
-    });
+        await session.commitTransaction();
+
+        res.status(201).json({
+            success: true,
+            reply: reply[0],
+        });
+    } catch (err) {
+        await session.abortTransaction();
+        throw err;
+    } finally {
+        await session.endSession();
+    }
 });
 
 const getMyNotes = asyncHandler(async (req: Request, res: Response) => {
@@ -380,6 +401,9 @@ const deleteNoteController = asyncHandler(async (req: Request, res: Response) =>
 
         // Delete related comments (including nested replies since they all have noteId reference)
         await Comment.deleteMany({ noteId: noteId }, { session });
+
+        // Delete any bookmarks pointing to this note
+        await SavedNote.deleteMany({ note: noteId }, { session });
 
         await session.commitTransaction();
 
@@ -518,6 +542,87 @@ const deleteCommentController = asyncHandler(async (req, res) => {
     }
 });
 
+// @desc Toggle Save (Bookmark) a Note
+// @route POST /:id/save
+// @access Private
+const toggleSaveController = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user?._id;
+
+    if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const noteIdParam = req.params.id;
+    if (typeof noteIdParam !== "string" || !mongoose.Types.ObjectId.isValid(noteIdParam)) {
+        return res.status(400).json({ message: "Invalid note id" });
+    }
+
+    const noteId = new mongoose.Types.ObjectId(noteIdParam);
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const existing = await SavedNote.findOne({ user: userId, note: noteId }).session(session);
+
+        let saved: boolean;
+
+        if (existing) {
+            await SavedNote.deleteOne({ user: userId, note: noteId }).session(session);
+            await Note.updateOne({ _id: noteId }, { $inc: { savesCount: -1 } }).session(session);
+            saved = false;
+        } else {
+            await SavedNote.create([{ user: userId, note: noteId }], { session });
+            await Note.updateOne({ _id: noteId }, { $inc: { savesCount: 1 } }).session(session);
+            saved = true;
+        }
+
+        await session.commitTransaction();
+
+        return res.status(200).json({ success: true, saved });
+
+    } catch (err) {
+        if ((err as any).code === 11000) {
+            // Concurrent save — treat as already saved
+            return res.status(200).json({ success: true, saved: true });
+        }
+        await session.abortTransaction();
+        throw err;
+    } finally {
+        await session.endSession();
+    }
+});
+
+// @desc Get all saved notes for the current user
+// @route GET /saved
+// @access Private
+const getSavedNotesController = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user?._id;
+
+    if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+
+    const total = await SavedNote.countDocuments({ user: userId });
+
+    const savedNotes = await SavedNote.find({ user: userId })
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .populate("note")
+        .lean();
+
+    return res.status(200).json({
+        success: true,
+        count: savedNotes.length,
+        total,
+        data: savedNotes.map(s => s.note),
+    });
+});
+
 export {
     createNoteController,
     toggleLikeController,
@@ -527,5 +632,7 @@ export {
     getMyNotes,
     deleteNoteController,
     editCommentController,
-    deleteCommentController
+    deleteCommentController,
+    toggleSaveController,
+    getSavedNotesController,
 };

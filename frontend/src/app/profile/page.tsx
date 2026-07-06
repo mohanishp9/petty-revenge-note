@@ -2,8 +2,9 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useSelector } from "react-redux";
-import { FileText, Mail, MessageCircle, NotebookPen, Plus, Trash2, UserRound, X } from "lucide-react";
+import { FileText, Mail, MessageCircle, NotebookPen, Plus, Trash2, UserRound, X, Bookmark } from "lucide-react";
 import { useAppDispatch } from "@/app/hook/dispatch";
 import { getCurrentUser,
     // setUserFromStorage
@@ -144,11 +145,11 @@ export default function ProfilePage() {
 } = useSelector((state: RootState) => state.createNote);
     const { loading: deleteNoteLoading } = useSelector((state: RootState) => state.deleteNote);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [activeCommentNoteId, setActiveCommentNoteId] = useState<string | null>(null);
     const [showUsername, setShowUsername] = useState(true);
     const [subject, setSubject] = useState("");
     const [content, setContent] = useState("");
     const [categoryEmoji, setCategoryEmoji] = useState<(typeof CATEGORY_OPTIONS)[number]>("😂");
-    const [activeCommentNoteId, setActiveCommentNoteId] = useState<string | null>(null);
     const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
@@ -270,6 +271,21 @@ export default function ProfilePage() {
                         </div>
                     </div>
                 </section>
+
+                <div className="flex gap-2 mb-6">
+                    <Link
+                        href="/saved"
+                        className="font-special-elite flex items-center gap-2 rounded-sm px-4 py-2 text-[10px] uppercase tracking-[0.22em] transition hover:opacity-80"
+                        style={{
+                            border: "1px solid rgba(80,100,160,0.35)",
+                            background: "rgba(80,100,160,0.08)",
+                            color: "#354080",
+                        }}
+                    >
+                        <Bookmark className="h-4 w-4" />
+                        Saved Notes
+                    </Link>
+                </div>
 
                 <section>
                     <div className="mb-4 flex items-center justify-between gap-4">

@@ -13,17 +13,24 @@
         likes: number;
         reactionsCount: Record<string, number>;
 
-        commentsCount: number;
-
-        createdAt: string;
+        userReaction: string | null;
+        savesCount?: number;
+        sharesCount?: number;
+        isSaved?: boolean;
+        comments: string[];
         updatedAt: string;
 
 
         hasLiked: boolean;
-        userReaction: string | null;
+
+        commentsCount: number;
+
+        createdAt: string;
 
         _prevHasLiked?: boolean;
         _prevLikes?: number;
+        _prevSavesCount?: number;
+        _prevIsSaved?: boolean;
 
         _prevReaction: string | null;
         _prevReactionsCount: Record<string, number>;

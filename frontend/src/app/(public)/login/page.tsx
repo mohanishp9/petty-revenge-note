@@ -4,14 +4,17 @@ import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { loginUser, clearError } from "@/features/auth/authSlice";
 import type { AppDispatch, RootState } from "@/store/store";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
 
-const Login = () => {
+const LoginForm = () => {
     const dispatch = useDispatch<AppDispatch>();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const redirectTo = searchParams.get("redirect") || "/home";
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -21,13 +24,12 @@ const Login = () => {
         (state: RootState) => state.auth
     );
 
-    // ✅ Redirect after login
     useEffect(() => {
         if (user) {
             toast.success("Login successful");
-            router.push("/home"); // homepage / feed
+            router.push(redirectTo);
         }
-    }, [user, router]);
+    }, [user, router, redirectTo]);
 
     // ❌ Show error properly
     useEffect(() => {
@@ -205,5 +207,17 @@ const Login = () => {
         </div>
     );
 }
+
+const Login = () => {
+    return (
+        <Suspense fallback={
+            <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: "#2b2a27" }}>
+                <p className="font-im-fell text-xl italic" style={{ color: "#d8cdb4" }}>Loading...</p>
+            </div>
+        }>
+            <LoginForm />
+        </Suspense>
+    );
+};
 
 export default Login;

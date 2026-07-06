@@ -15,6 +15,7 @@ export interface AuthState {
     accessToken: string | null;
     loading: boolean;
     error: string | OtpError | null;
+    isInitialized: boolean;
 }
 
 // Used by OTP thunks so the page can distinguish HTTP status codes (409, 429, 400)

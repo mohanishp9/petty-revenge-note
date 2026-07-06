@@ -8,5 +8,7 @@ export interface NoteTypes {
     categoryEmoji: string;
     likes: number;
     reactionsCount: Map<string, number>;
-    commentsCount: Number;
+    commentsCount: number;
+    savesCount: number;
+    sharesCount: number;
 }
