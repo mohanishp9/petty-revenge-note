@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { Search } from "lucide-react";
 import toast from "react-hot-toast";
+import Link from "next/link";
 
 import { useAppDispatch } from "@/app/hook/dispatch";
 import { fetchNotes, deleteNoteAdmin, ModerationNote } from "@/features/notes/notesSlice";
@@ -96,6 +97,23 @@ export default function NotesPage() {
                 const date = new Date(note.createdAt);
                 return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
             }
+        },
+        {
+            header: "Reports",
+            accessorKey: "reportsCount",
+            cell: (note: ModerationNote) => (
+                <div className={`font-bold flex items-center gap-2 ${note.reportsCount && note.reportsCount > 0 ? 'text-[var(--color-term-status-red)]' : 'text-[var(--color-term-text-secondary)]'}`}>
+                    <span>{note.reportsCount || 0}</span>
+                    {(note.reportsCount || 0) > 0 && (
+                        <>
+                            <span className="text-[var(--color-term-border)]">|</span>
+                            <Link href={`/notes/${note._id}/reports`} className="hover:underline text-[var(--color-term-accent-cyan)] font-mono text-[10px]">
+                                [SEE]
+                            </Link>
+                        </>
+                    )}
+                </div>
+            )
         },
         {
             header: "",

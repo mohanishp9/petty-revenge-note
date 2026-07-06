@@ -11,6 +11,16 @@ export const trackShareAPI = async (noteId: string): Promise<{ success: boolean;
     return res.data;
 };
 
+export const toggleSaveAPI = async (noteId: string) => {
+    const res = await api.post(`/protected/notes/${noteId}/save`);
+    return res.data.data;
+};
+
+export const reportNoteAPI = async (noteId: string, reason: string, details?: string) => {
+    const res = await api.post(`/protected/notes/${noteId}/report`, { reason, details });
+    return res.data;
+};
+
 export const getSingleNoteAPI = async (noteId: string): Promise<{ success: boolean; data: any }> => {
     const res = await api.get(`/public/notes/${noteId}`);
     return res.data;

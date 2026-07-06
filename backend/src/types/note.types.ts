@@ -11,4 +11,5 @@ export interface NoteTypes {
     commentsCount: number;
     savesCount: number;
     sharesCount: number;
+    reportsCount: number;
 }
