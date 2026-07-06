@@ -1,5 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import type { NoteTypes } from "../types/note.types";
+import { VALID_EMOJIS } from "../utils/constants";
 
 const noteSchema = new Schema<NoteTypes>({
     user: {
@@ -27,8 +28,8 @@ const noteSchema = new Schema<NoteTypes>({
     categoryEmoji: {
         type: String,
         required: true,
-        enum: ["😂", "😡", "😳", "😭"], // change later
-        default: "😂",
+        enum: Object.values(VALID_EMOJIS), // Use shared constant
+        default: VALID_EMOJIS[0],
     },
     likes: { type: Number, default: 0 },
     reactionsCount: {

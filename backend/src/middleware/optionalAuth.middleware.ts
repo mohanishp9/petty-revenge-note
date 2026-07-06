@@ -1,20 +1,25 @@
 import type { Request, Response, NextFunction } from "express";
-import { verifyAccessToken } from "../utils/jwt";
+import { verifyAccessToken, verifyRefreshToken, JWTPayload } from "../utils/jwt";
 import mongoose from "mongoose";
 
 export const optionalAuth = (req: Request, res: Response, next: NextFunction) => {
-    const cookieToken = req.cookies?.token as string | undefined;
+    const cookieToken = req.cookies?.refreshToken as string | undefined;
     const authHeader = req.headers.authorization;
     const bearerToken = authHeader?.startsWith("Bearer ")
         ? authHeader.slice("Bearer ".length)
         : undefined;
-    const token = cookieToken || bearerToken;
 
-    if (!token) {
+    if (!cookieToken && !bearerToken) {
         return next();
     }
 
-    const decoded = verifyAccessToken(token);
+    let decoded: JWTPayload | null = null;
+    
+    if (bearerToken) {
+        decoded = verifyAccessToken(bearerToken);
+    } else if (cookieToken) {
+        decoded = verifyRefreshToken(cookieToken);
+    }
 
     if (decoded) {
         req.user = {

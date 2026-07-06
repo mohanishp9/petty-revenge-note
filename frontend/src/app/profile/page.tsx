@@ -21,11 +21,11 @@ import { deleteNote,
 import { getMyNotes, resetMyNotes, removeNote } from "@/features/getMyNotes/getMyNotesSlice";
 import type { Note } from "@/features/publicNote/types";
 import type { RootState } from "@/store/store";
-// import CommentItem from "@/components/CommentItem";
+import { VALID_EMOJIS } from "@/utils/constants";
 
 const NOTES_PER_PAGE = 12;
 const COMMENTS_PER_PAGE = 10;
-const CATEGORY_OPTIONS = ["😂", "😡", "😳", "😭"] as const;
+const CATEGORY_OPTIONS = VALID_EMOJIS;
 
 const reactionTotal = (counts: Record<string, number>) => Object.values(counts).reduce((sum, value) => sum + value, 0);
 const reactionSummary = (counts: Record<string, number>) => {

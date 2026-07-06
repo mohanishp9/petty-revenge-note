@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 
 export interface LikeTypes {
-    readonly userId: Types.ObjectId;
-    readonly noteId: Types.ObjectId;
+    readonly user: Types.ObjectId;
+    readonly note: Types.ObjectId;
 }

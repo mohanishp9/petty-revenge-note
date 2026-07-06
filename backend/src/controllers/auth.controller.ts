@@ -2,7 +2,6 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { registerSchema, loginSchema, verifyOtpSchema, forgotPasswordSchema, resetPasswordSchema } from "../utils/validation";
 import type { RegisterInput, LoginInput, VerifyOtpInput, ForgotPasswordInput, ResetPasswordInput } from "../utils/validation";
 import User from "../models/User.model";
-import Note from "../models/Note.model";
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "../utils/jwt";
 import { generateOtp, hashOtp, verifyOtp } from "../utils/otpUtils";
 import { sendOtpEmail } from "../services/emailService";
@@ -348,14 +347,9 @@ const getCurrentUserProfileController = asyncHandler(async (req: Request, res: R
         });
     }
 
-    const [userFromDB, notes] = await Promise.all([
-        User.findById(req.user._id)
-            .select("_id username email")
-            .lean(),
-        Note.find({ user: req.user._id })
-            .sort({ createdAt: -1 })
-            .lean()
-    ]);
+    const userFromDB = await User.findById(req.user._id)
+        .select("_id username email")
+        .lean();
 
     res.status(200).json({
         success: true,

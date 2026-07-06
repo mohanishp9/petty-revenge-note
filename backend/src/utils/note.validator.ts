@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { VALID_EMOJIS } from "./constants";
 
 export const emojiSchema = z.object({
-    emoji: z.enum(["😂", "😡", "😳", "😭"])
+    emoji: z.enum(VALID_EMOJIS)
 });
 
 export type EmojiInput = z.infer<typeof emojiSchema>;
@@ -18,7 +19,7 @@ export const createNoteSchema = z.object({
         .min(1, { message: "Content is required" })
         .max(500, { message: "Content cannot exceed 500 characters" }),
 
-    categoryEmoji: z.enum(["😂", "😡", "😳", "😭"]),
+    categoryEmoji: z.enum(VALID_EMOJIS),
 });
 
 export type CreateNoteInput = z.infer<typeof createNoteSchema>;

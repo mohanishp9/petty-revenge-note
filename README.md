@@ -55,6 +55,17 @@ The `Note` schema uses denormalized counter fields (`likes`, `commentsCount`). W
 ### Rate Limiting
 The API uses `express-rate-limit` with a Redis store. It applies a general rate limit across all routes and a stricter limit for OTP endpoints using an IP and Email composite key.
 
+### Atlas Search Setup (Required for fuzzy search)
+Petty Revenge Notes uses MongoDB Atlas Search for rich text search capabilities on notes. 
+If you skip this step, the app will automatically fall back to standard regex search, but you will lose typo tolerance (fuzzy matching) and text scoring.
+
+1. In MongoDB Atlas, go to your cluster -> **Atlas Search**.
+2. Click **Create Search Index**.
+3. Select **JSON Editor**.
+4. Set the Database and Collection (e.g. `test.notes` or `petty-revenge.notes`).
+5. Set the Index Name to `note-search` (this must match exactly).
+6. Use the default `dynamic: true` mapping.
+
 ## Local Setup
 
 ### Prerequisites

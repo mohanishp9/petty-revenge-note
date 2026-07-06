@@ -2,13 +2,13 @@ import mongoose, { Schema } from "mongoose";
 import type { LikeTypes } from "../types/like.types";
 
 const likeSchema = new Schema<LikeTypes>({
-    userId: {
+    user: {
         type: Schema.Types.ObjectId,
         ref: "User",
         required: true,
         index: true
     },
-    noteId: {
+    note: {
         type: Schema.Types.ObjectId,
         ref: "Note",
         required: true,
@@ -16,7 +16,7 @@ const likeSchema = new Schema<LikeTypes>({
     }
 }, { timestamps: true });
 
-likeSchema.index({ userId: 1, noteId: 1 }, { unique: true });
+likeSchema.index({ user: 1, note: 1 }, { unique: true });
 
 const Like = mongoose.model<LikeTypes>("Like", likeSchema);
 
