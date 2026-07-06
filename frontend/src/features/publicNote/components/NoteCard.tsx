@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, MessageCircle, SmilePlus, Bookmark, Share2 } from "lucide-react";
+import { Heart, MessageCircle, SmilePlus, Bookmark, Share2, Flag } from "lucide-react";
 import { useAppDispatch } from "@/app/hook/dispatch";
 import { reactToNote, toggleLike } from "@/features/publicNote/publicNoteSlice";
 import type { Note } from "@/features/publicNote/types";
 import { DEFAULT_REACTIONS, getReactionTotal, formatReactionSummary } from "@/utils/reactionUtils";
 import { trackShareAPI } from "@/features/publicNote/publicNoteApi";
 import toast from "react-hot-toast";
+import ReportModal from "./ReportModal";
 
 export type NoteCardProps = {
   isCommentsOpen: boolean;
@@ -35,6 +36,7 @@ const NoteCard = ({
   const hasLiked = note.hasLiked;
   const userReaction = note.userReaction || null;
   const [localSharesCount, setLocalSharesCount] = useState<number>(note.sharesCount ?? 0);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const reactionCounts = note.reactionsCount;
   const visibleReactionCount = getReactionTotal(reactionCounts);
 
@@ -88,6 +90,14 @@ const NoteCard = ({
     setIsReactionMenuOpen(false);
   };
 
+  const handleReport = () => {
+    if (!isLoggedIn) {
+      router.push("/login");
+      return;
+    }
+    setIsReportModalOpen(true);
+  };
+
   return (
     <article
       className="relative rounded-sm transition duration-300 ease-out"
@@ -131,19 +141,36 @@ const NoteCard = ({
             {new Date(note.createdAt).toLocaleDateString()}
           </p>
         </div>
-        {!isLoggedIn && (
+        
+        <div className="flex items-center gap-2">
+          {!isLoggedIn && (
+            <button
+              type="button"
+              className="font-special-elite flex-shrink-0 rounded-sm px-2 py-1 text-[9px] uppercase tracking-widest"
+              style={{
+                border: "1px solid rgba(120,80,20,0.25)",
+                color: "#8a6030",
+              }}
+              onClick={() => router.push("/login")}
+            >
+              Login
+            </button>
+          )}
           <button
-            type="button"
-            className="font-special-elite flex-shrink-0 rounded-sm px-2 py-1 text-[9px] uppercase tracking-widest"
-            style={{
-              border: "1px solid rgba(120,80,20,0.25)",
-              color: "#8a6030",
-            }}
-            onClick={() => router.push("/login")}
+            onClick={handleShare}
+            className="group flex h-8 w-8 items-center justify-center rounded-sm transition-colors hover:bg-[#e8d5a5]"
+            title="Share Note"
           >
-            Login
+            <Share2 className="h-4 w-4 text-[#7a5a22] transition-transform group-hover:scale-110" />
           </button>
-        )}
+          <button
+            onClick={handleReport}
+            className="group flex h-8 w-8 items-center justify-center rounded-sm transition-colors hover:bg-[#e8d5a5]"
+            title="Report Note"
+          >
+            <Flag className="h-4 w-4 text-[#7a5a22] transition-transform group-hover:scale-110" />
+          </button>
+        </div>
       </div>
 
       {note.subject && (
@@ -212,7 +239,7 @@ const NoteCard = ({
             {userReaction ? (
               <span style={{ fontSize: 16 }}>{userReaction}</span>
             ) : (
-              <SmilePlus className="h-4 w-4" />
+              <SmilePlus className="h-[18px] w-[18px]" />
             )}
             <span>{userReaction ?? "React"}</span>
           </button>
@@ -304,6 +331,12 @@ const NoteCard = ({
       >
         {visibleReactionCount} reactions
       </div>
+      
+      <ReportModal 
+        isOpen={isReportModalOpen} 
+        onClose={() => setIsReportModalOpen(false)} 
+        noteId={note._id} 
+      />
     </article>
   );
 };

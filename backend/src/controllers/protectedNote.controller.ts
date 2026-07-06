@@ -4,6 +4,7 @@ import Like from "../models/Like.model";
 import Reaction from "../models/Reaction.model";
 import Comment from "../models/Comment.model";
 import SavedNote from "../models/SavedNote.model";
+import Report from "../models/Report.model";
 import { createNoteSchema } from "../utils/note.validator";
 import { reactionSchema } from "../utils/reaction.validator";
 import { addCommentSchema, addReplySchema, editCommentSchema, deleteCommentSchema } from "../utils/comment.validator";
@@ -636,3 +637,47 @@ export {
     toggleSaveController,
     getSavedNotesController,
 };
+
+// @desc Report Note
+// @route POST /api/notes/:id/report
+// @access Private
+export const reportNoteController = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { id: noteId } = req.params;
+    const { reason, details } = req.body;
+
+    if (typeof noteId !== "string" || !mongoose.Types.ObjectId.isValid(noteId)) {
+        return res.status(400).json({ message: "Invalid note ID" });
+    }
+
+    const validReasons = ["spam", "harassment", "inappropriate", "other"];
+    const reportReason = validReasons.includes(reason) ? reason : "other";
+
+    const note = await Note.findById(noteId);
+    if (!note) {
+        return res.status(404).json({ message: "Note not found" });
+    }
+
+    const existingReport = await Report.findOne({ user: req.user._id, note: noteId });
+    if (existingReport) {
+        return res.status(400).json({ message: "You have already reported this note" });
+    }
+
+    await Report.create({
+        user: req.user._id,
+        note: noteId,
+        reason: reportReason,
+        details: details || undefined,
+    });
+
+    note.reportsCount = (note.reportsCount || 0) + 1;
+    await note.save();
+
+    res.status(200).json({
+        success: true,
+        message: "Report submitted successfully",
+    });
+});

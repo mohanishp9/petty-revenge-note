@@ -11,6 +11,7 @@ import {
     deleteCommentController,
     toggleSaveController,
     getSavedNotesController,
+    reportNoteController,
 } from "../controllers/protectedNote.controller";
 import { protect } from "../middleware/auth.middleware";
 import { apiLimiter } from "../middleware/rateLimit.middleware";
@@ -25,6 +26,7 @@ router.post("/", apiLimiter, createNoteController);
 router.post("/:id/like", protect, toggleLikeController)
 router.post("/:id/reaction", protect, reactionController)
 router.post("/:id/save", protect, toggleSaveController)
+router.post("/:id/report", protect, reportNoteController)
 router.post("/:id/comment", protect, addCommentController)
 router.post("/comments/:commentId/reply", protect, addReplyController)
 router.put("/comments/:commentId", protect, editCommentController)

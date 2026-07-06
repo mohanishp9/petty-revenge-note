@@ -5,6 +5,7 @@ import Note from "../../models/Note.model";
 import Comment from "../../models/Comment.model";
 import Like from "../../models/Like.model";
 import Reaction from "../../models/Reaction.model";
+import Report from "../../models/Report.model";
 import AuditLog from "../../models/AuditLog.model";
 
 // @desc Get all notes for moderation
@@ -73,10 +74,13 @@ export const deleteNoteAdmin = asyncHandler(async (req: Request, res: Response) 
         // 4. Delete all likes on this note (field is noteId, not note)
         await Like.deleteMany({ noteId: noteId }).session(session);
 
-        // 5. Delete the actual note
+        // 5. Delete all reports on this note
+        await Report.deleteMany({ note: noteId }).session(session);
+
+        // 6. Delete the actual note
         await Note.findByIdAndDelete(noteId).session(session);
 
-        // 6. Create Audit Log
+        // 7. Create Audit Log
         await AuditLog.create([{
             adminId: req.adminUser!._id,
             action: "DELETE_NOTE",
@@ -101,4 +105,34 @@ export const deleteNoteAdmin = asyncHandler(async (req: Request, res: Response) 
             error: error.message,
         });
     }
+});
+
+// @desc Get a specific note with all its reports
+// @route GET /api/admin/notes/:id/reports
+// @access Private (Admin)
+export const getNoteReportsAdmin = asyncHandler(async (req: Request, res: Response) => {
+    const noteId = req.params.id;
+
+    if (typeof noteId !== "string" || !mongoose.Types.ObjectId.isValid(noteId)) {
+        return res.status(400).json({ message: "Invalid note ID" });
+    }
+
+    const note = await Note.findById(noteId)
+        .populate("user", "username email")
+        .lean();
+
+    if (!note) {
+        return res.status(404).json({ message: "Note not found" });
+    }
+
+    const reports = await Report.find({ note: noteId })
+        .populate("user", "username email")
+        .sort("-createdAt")
+        .lean();
+
+    return res.status(200).json({
+        success: true,
+        note,
+        reports,
+    });
 });

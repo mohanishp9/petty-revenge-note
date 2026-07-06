@@ -12,6 +12,7 @@ export interface ModerationNote {
         username: string;
         email: string;
     };
+    reportsCount?: number;
 }
 
 interface FetchNotesResponse {

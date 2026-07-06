@@ -39,6 +39,7 @@ const noteSchema = new Schema<NoteTypes>({
     commentsCount: { type: Number, default: 0 },
     savesCount: { type: Number, default: 0 },
     sharesCount: { type: Number, default: 0 },
+    reportsCount: { type: Number, default: 0 },
 }, {
     timestamps: true,
 });
