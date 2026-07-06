@@ -177,7 +177,7 @@ const verifyRegistrationOtp = asyncHandler(async (req: Request, res: Response) =
         await redisClient.del(key);
         return res.status(409).json({
             success: false,
-            message: alreadyExists.email === userEmail ? "Email already registered" : "Username already taken",
+            message: "User already exists",
         });
     }
 
@@ -289,6 +289,16 @@ const refreshTokenController = asyncHandler(async (req: Request, res: Response) 
         })
     }
 
+    // Reuse detection via Redis blacklist
+    const blacklistKey = `blacklist:rt:${token}`;
+    const isBlacklisted = await redisClient.get(blacklistKey);
+    if (isBlacklisted) {
+        return res.status(401).json({
+            success: false,
+            message: "Token reuse detected. Please login again.",
+        });
+    }
+
     const user = await User.findById(decoded.id);
     if (!user) {
         return res.status(401).json({
@@ -302,6 +312,12 @@ const refreshTokenController = asyncHandler(async (req: Request, res: Response) 
             success: false,
             message: "Your account has been banned.",
         });
+    }
+
+    // Blacklist the old refresh token
+    const remainingTtl = decoded.exp - Math.floor(Date.now() / 1000);
+    if (remainingTtl > 0) {
+        await redisClient.set(blacklistKey, "blacklisted", "EX", remainingTtl);
     }
 
     const accessToken = generateAccessToken(user._id.toString());
