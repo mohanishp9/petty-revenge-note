@@ -38,8 +38,28 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Petty Revenge Notes",
-  description: "A social-style dashboard for public revenge notes",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://petty-revenge-note.vercel.app"),
+  title: {
+    default: "Petty Revenge Notes",
+    template: "%s | Petty Revenge Notes",
+  },
+  description: "The public ledger for every slight, duly recorded for posterity. Read, share, and track viral revenge notes.",
+  openGraph: {
+    title: "Petty Revenge Notes",
+    description: "The public ledger for every slight, duly recorded for posterity.",
+    url: "/",
+    siteName: "Petty Revenge Notes",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Petty Revenge Notes",
+    description: "The public ledger for every slight, duly recorded for posterity.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
