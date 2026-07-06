@@ -12,6 +12,9 @@ import { ToggleLikeParams } from "@/features/toggleLike/types";
 import { reactionApi } from "@/features/reaction/rectionApi";
 import { getErrorMessage } from "@/utils/getErrorMessage";
 
+// save — imported lazily to avoid circular dep; we only use the action type
+import { toggleSave } from "@/features/savedNotes/savedNotesSlice";
+
 export const initialState: getAllNotesState = {
     notes: [],
 
@@ -70,7 +73,17 @@ export const reactToNote = createAsyncThunk(
 const publicNoteSlice = createSlice({
     name: "publicNote",
     initialState,
-    reducers: {},
+    reducers: {
+        addSingleNote: (state, action) => {
+            const incomingNote = action.payload;
+            const exists = state.notes.some(n => n._id === incomingNote._id);
+            if (!exists) {
+                state.notes.push(incomingNote);
+            } else {
+                state.notes = state.notes.map(n => n._id === incomingNote._id ? incomingNote : n);
+            }
+        }
+    },
     extraReducers: (builder) => {
         builder
             .addCase(getAllNotes.pending, (state) => {
@@ -211,7 +224,46 @@ const publicNoteSlice = createSlice({
                 note.userReaction = note._prevReaction;
                 note.reactionsCount = note._prevReactionsCount;
             })
+            // ── Save optimistic updates (mirrors toggleLike pattern) ──
+            .addCase(toggleSave.pending, (state, action) => {
+                const noteId = action.meta.arg;
+                const note = state.notes.find(n => n._id === noteId);
+                if (!note) return;
+
+                note._prevSavesCount = note.savesCount;
+                note._prevIsSaved = note.isSaved;
+
+                // Determine current saved state from the action's optimistic direction
+                // We don't have savedNoteIds here, so we mirror the counter direction
+                // The fulfilled case will reconcile with the server value
+                const currentlySaved = note.isSaved;
+                note.savesCount = Math.max(0, (note.savesCount || 0) + (currentlySaved ? -1 : 1));
+                note.isSaved = !currentlySaved;
+            })
+            .addCase(toggleSave.fulfilled, (state, action) => {
+                const { noteId, saved } = action.payload;
+                const note = state.notes.find(n => n._id === noteId);
+                if (!note) return;
+
+                // Use the prev value + server truth to set correct counter. If undefined, it was 0.
+                const base = note._prevSavesCount !== undefined ? note._prevSavesCount : 0;
+                note.savesCount = saved ? base + 1 : Math.max(0, base - 1);
+                note.isSaved = saved;
+            })
+            .addCase(toggleSave.rejected, (state, action) => {
+                const noteId = action.meta.arg;
+                const note = state.notes.find(n => n._id === noteId);
+                if (!note) return;
+
+                if (note._prevSavesCount !== undefined) {
+                    note.savesCount = note._prevSavesCount;
+                }
+                if (note._prevIsSaved !== undefined) {
+                    note.isSaved = note._prevIsSaved;
+                }
+            })
     }
 });
 
+export const { addSingleNote } = publicNoteSlice.actions;
 export default publicNoteSlice.reducer;

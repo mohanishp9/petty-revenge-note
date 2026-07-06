@@ -8,6 +8,7 @@ export const initialState: AuthState = {
     accessToken: null,
     loading: false,
     error: null,
+    isInitialized: false,
 }
 
 export const refreshToken = createAsyncThunk(
@@ -166,10 +167,12 @@ const authSlice = createSlice({
             .addCase(refreshToken.fulfilled, (state, action) => {
                 state.loading = false;
                 state.accessToken = action.payload.accessToken;
+                state.isInitialized = true;
             })
             .addCase(refreshToken.rejected, (state) => {
                 state.loading = false;
                 state.accessToken = null;
+                state.isInitialized = true;
             })
 
             .addCase(loginUser.pending, (state) => {

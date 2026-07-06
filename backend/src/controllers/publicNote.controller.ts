@@ -7,6 +7,7 @@ import mongoose, { type SortOrder } from "mongoose";
 import { emojiSchema, noteQuerySchema, createNoteSchema } from "../utils/note.validator";
 import type { Request, Response } from "express";
 import Like from "../models/Like.model";
+import SavedNote from "../models/SavedNote.model";
 
 // @desc Get all notes also sort
 // @route GET /?sort=mostLiked&page=1&limit=10
@@ -43,6 +44,7 @@ const getNotesController = asyncHandler(async (req: Request, res: Response) => {
             data: notes.map(note => ({
                 ...note,
                 hasLiked: false,
+                isSaved: false,
                 userReaction: null
             }))
         });
@@ -66,9 +68,17 @@ const getNotesController = asyncHandler(async (req: Request, res: Response) => {
         reactions.map(r => [r.note.toString(), r.emoji])
     );
 
+    const savedNotes = await SavedNote.find({
+        user: userId,
+        note: { $in: noteIds }
+    }).lean();
+
+    const savedSet = new Set(savedNotes.map(s => s.note.toString()));
+
     const enrichedNotes = notes.map(note => ({
         ...note,
         hasLiked: likedSet.has(note._id.toString()),
+        isSaved: savedSet.has(note._id.toString()),
         userReaction: reactionMap.get(note._id.toString()) || null
     }));
 
@@ -115,10 +125,57 @@ const getTopNotesByEmojiController = asyncHandler(async (req: Request, res: Resp
         }
     ]);
 
+    const userId = req.user?._id;
+    let enrichedData = notes;
+
+    if (userId && notes.length > 0) {
+        const noteIds = notes.map(n => n.note._id);
+
+        const likes = await Like.find({
+            userId,
+            noteId: { $in: noteIds },
+        }).lean();
+        const likedSet = new Set(likes.map(l => l.noteId.toString()));
+
+        const reactions = await Reaction.find({
+            user: userId,
+            note: { $in: noteIds }
+        }).lean();
+        const reactionMap = new Map(
+            reactions.map(r => [r.note.toString(), r.emoji])
+        );
+
+        const savedNotes = await SavedNote.find({
+            user: userId,
+            note: { $in: noteIds }
+        }).lean();
+        const savedSet = new Set(savedNotes.map(s => s.note.toString()));
+
+        enrichedData = notes.map(item => ({
+            count: item.count,
+            note: {
+                ...item.note,
+                hasLiked: likedSet.has(item.note._id.toString()),
+                isSaved: savedSet.has(item.note._id.toString()),
+                userReaction: reactionMap.get(item.note._id.toString()) || null
+            }
+        }));
+    } else {
+        enrichedData = notes.map(item => ({
+            count: item.count,
+            note: {
+                ...item.note,
+                hasLiked: false,
+                isSaved: false,
+                userReaction: null
+            }
+        }));
+    }
+
     res.status(200).json({
         success: true,
         count: notes.length,
-        data: notes,
+        data: enrichedData,
     });
 });
 
@@ -292,15 +349,23 @@ const searchNotesController = asyncHandler(async (req: Request, res: Response) =
             reactions.map(r => [r.note.toString(), r.emoji])
         );
 
+        const savedNotes = await SavedNote.find({
+            user: userId,
+            note: { $in: noteIds }
+        }).lean();
+        const savedSet = new Set(savedNotes.map(s => s.note.toString()));
+
         enrichedNotes = notes.map(note => ({
             ...note,
             hasLiked: likedSet.has(note._id.toString()),
+            isSaved: savedSet.has(note._id.toString()),
             userReaction: reactionMap.get(note._id.toString()) || null
         }));
     } else {
         enrichedNotes = notes.map(note => ({
             ...note,
             hasLiked: false,
+            isSaved: false,
             userReaction: null
         }));
     }
@@ -313,9 +378,76 @@ const searchNotesController = asyncHandler(async (req: Request, res: Response) =
     });
 });
 
+// @desc Increment Share Count
+// @route POST /api/public/notes/:id/share
+// @access Public
+const incrementShareController = asyncHandler(async (req: Request, res: Response) => {
+    const noteId = req.params.id;
+    if (typeof noteId !== "string" || !mongoose.Types.ObjectId.isValid(noteId)) {
+        return res.status(400).json({ message: "Invalid note id" });
+    }
+
+    const note = await Note.findOneAndUpdate(
+        { _id: noteId },
+        { $inc: { sharesCount: 1 } },
+        { new: true }
+    );
+
+    if (!note) {
+        return res.status(404).json({ message: "Note not found" });
+    }
+
+    res.status(200).json({ success: true, sharesCount: note.sharesCount });
+});
+
+// @desc Get a single note by ID
+// @route GET /api/public/notes/:id
+// @access Public (with optionalAuth)
+const getSingleNoteController = asyncHandler(async (req: Request, res: Response) => {
+    const noteId = req.params.id;
+    if (typeof noteId !== "string" || !mongoose.Types.ObjectId.isValid(noteId)) {
+        return res.status(400).json({ message: "Invalid note id" });
+    }
+
+    const note = await Note.findById(noteId).populate("user", "username").lean();
+    if (!note) {
+        return res.status(404).json({ message: "Note not found" });
+    }
+
+    const userId = req.user?._id;
+    let hasLiked = false;
+    let isSaved = false;
+    let userReaction = null;
+
+    if (userId) {
+        const like = await Like.findOne({ userId, noteId }).lean();
+        if (like) hasLiked = true;
+
+        const reaction = await Reaction.findOne({ user: userId, note: noteId }).lean();
+        if (reaction) userReaction = reaction.emoji;
+
+        const savedNote = await SavedNote.findOne({ user: userId, note: noteId }).lean();
+        if (savedNote) isSaved = true;
+    }
+
+    const enrichedNote = {
+        ...note,
+        hasLiked,
+        isSaved,
+        userReaction,
+    };
+
+    res.status(200).json({
+        success: true,
+        data: enrichedNote,
+    });
+});
+
 export {
     getNotesController, // done
     getTopNotesByEmojiController,
     getCommentsController, // done
     searchNotesController, // new
+    incrementShareController,
+    getSingleNoteController,
 }

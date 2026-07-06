@@ -22,6 +22,7 @@ import NoteCard from "@/features/publicNote/components/NoteCard";
 import CommentsPanel from "@/features/comments/components/CommentsPanel";
 import { useNoteFeed, NOTES_PER_PAGE } from "@/hooks/useNoteFeed";
 import { useSearchFeed } from "@/hooks/useSearchFeed";
+import { toggleSave } from "@/features/savedNotes/savedNotesSlice";
 
 const COMMENTS_PER_PAGE = 10;
 
@@ -305,12 +306,14 @@ const HomePage = () => {
             }}
           >
             {displayedNotes.map((note) => (
-              <NoteCard
+            <NoteCard
                 key={note._id}
                 isCommentsOpen={activeCommentNoteId === note._id}
                 isLoggedIn={Boolean(accessToken)}
+                isSaved={Boolean(note.isSaved)}
                 note={note}
                 onCommentToggle={handleCommentToggle}
+                onSaveToggle={(noteId) => dispatch(toggleSave(noteId))}
               />
             ))}
           </div>

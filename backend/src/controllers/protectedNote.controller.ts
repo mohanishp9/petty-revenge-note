@@ -3,6 +3,7 @@ import Note from "../models/Note.model";
 import Like from "../models/Like.model";
 import Reaction from "../models/Reaction.model";
 import Comment from "../models/Comment.model";
+import SavedNote from "../models/SavedNote.model";
 import { createNoteSchema } from "../utils/note.validator";
 import { reactionSchema } from "../utils/reaction.validator";
 import { addCommentSchema, addReplySchema, editCommentSchema, deleteCommentSchema } from "../utils/comment.validator";
@@ -401,6 +402,9 @@ const deleteNoteController = asyncHandler(async (req: Request, res: Response) =>
         // Delete related comments (including nested replies since they all have noteId reference)
         await Comment.deleteMany({ noteId: noteId }, { session });
 
+        // Delete any bookmarks pointing to this note
+        await SavedNote.deleteMany({ note: noteId }, { session });
+
         await session.commitTransaction();
 
         return res.status(200).json({
@@ -538,6 +542,87 @@ const deleteCommentController = asyncHandler(async (req, res) => {
     }
 });
 
+// @desc Toggle Save (Bookmark) a Note
+// @route POST /:id/save
+// @access Private
+const toggleSaveController = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user?._id;
+
+    if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const noteIdParam = req.params.id;
+    if (typeof noteIdParam !== "string" || !mongoose.Types.ObjectId.isValid(noteIdParam)) {
+        return res.status(400).json({ message: "Invalid note id" });
+    }
+
+    const noteId = new mongoose.Types.ObjectId(noteIdParam);
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const existing = await SavedNote.findOne({ user: userId, note: noteId }).session(session);
+
+        let saved: boolean;
+
+        if (existing) {
+            await SavedNote.deleteOne({ user: userId, note: noteId }).session(session);
+            await Note.updateOne({ _id: noteId }, { $inc: { savesCount: -1 } }).session(session);
+            saved = false;
+        } else {
+            await SavedNote.create([{ user: userId, note: noteId }], { session });
+            await Note.updateOne({ _id: noteId }, { $inc: { savesCount: 1 } }).session(session);
+            saved = true;
+        }
+
+        await session.commitTransaction();
+
+        return res.status(200).json({ success: true, saved });
+
+    } catch (err) {
+        if ((err as any).code === 11000) {
+            // Concurrent save — treat as already saved
+            return res.status(200).json({ success: true, saved: true });
+        }
+        await session.abortTransaction();
+        throw err;
+    } finally {
+        await session.endSession();
+    }
+});
+
+// @desc Get all saved notes for the current user
+// @route GET /saved
+// @access Private
+const getSavedNotesController = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user?._id;
+
+    if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+
+    const total = await SavedNote.countDocuments({ user: userId });
+
+    const savedNotes = await SavedNote.find({ user: userId })
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .populate("note")
+        .lean();
+
+    return res.status(200).json({
+        success: true,
+        count: savedNotes.length,
+        total,
+        data: savedNotes.map(s => s.note),
+    });
+});
+
 export {
     createNoteController,
     toggleLikeController,
@@ -547,5 +632,7 @@ export {
     getMyNotes,
     deleteNoteController,
     editCommentController,
-    deleteCommentController
+    deleteCommentController,
+    toggleSaveController,
+    getSavedNotesController,
 };

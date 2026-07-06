@@ -2,24 +2,30 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, MessageCircle, SmilePlus } from "lucide-react";
+import { Heart, MessageCircle, SmilePlus, Bookmark, Share2 } from "lucide-react";
 import { useAppDispatch } from "@/app/hook/dispatch";
 import { reactToNote, toggleLike } from "@/features/publicNote/publicNoteSlice";
 import type { Note } from "@/features/publicNote/types";
 import { DEFAULT_REACTIONS, getReactionTotal, formatReactionSummary } from "@/utils/reactionUtils";
+import { trackShareAPI } from "@/features/publicNote/publicNoteApi";
+import toast from "react-hot-toast";
 
 export type NoteCardProps = {
   isCommentsOpen: boolean;
   isLoggedIn: boolean;
+  isSaved: boolean;
   note: Note;
   onCommentToggle: (noteId: string) => void;
+  onSaveToggle: (noteId: string) => void;
 };
 
 const NoteCard = ({
   isCommentsOpen,
   isLoggedIn,
+  isSaved,
   note,
   onCommentToggle,
+  onSaveToggle,
 }: NoteCardProps) => {
   const dispatch = useAppDispatch();
   const router = useRouter();
@@ -27,9 +33,26 @@ const NoteCard = ({
   const reactionMenuRef = useRef<HTMLDivElement | null>(null);
 
   const hasLiked = note.hasLiked;
-  const userReaction = note.userReaction;
+  const userReaction = note.userReaction || null;
+  const [localSharesCount, setLocalSharesCount] = useState<number>(note.sharesCount ?? 0);
   const reactionCounts = note.reactionsCount;
   const visibleReactionCount = getReactionTotal(reactionCounts);
+
+  const handleShare = async () => {
+    try {
+      const domain = typeof window !== "undefined" ? window.location.origin : "https://petty-revenge-note.vercel.app";
+      const url = `${domain}/note/${note._id}`;
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied to clipboard!");
+      
+      setLocalSharesCount(prev => prev + 1);
+      // Fire and forget
+      trackShareAPI(note._id).catch(console.error);
+    } catch (err) {
+      console.error("Failed to copy link", err);
+      toast.error("Failed to copy link");
+    }
+  };
 
   useEffect(() => {
     if (!isReactionMenuOpen) {
@@ -149,7 +172,7 @@ const NoteCard = ({
         {formatReactionSummary(reactionCounts)}
       </div>
 
-      <div className="grid grid-cols-3 gap-2 pl-3">
+      <div className="grid grid-cols-4 gap-2 pl-3">
         <button
           type="button"
           onClick={handleLikeClick}
@@ -235,6 +258,43 @@ const NoteCard = ({
         >
           <MessageCircle className="h-4 w-4" />
           <span>{note.commentsCount}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            if (!isLoggedIn) {
+              router.push("/login");
+              return;
+            }
+            onSaveToggle(note._id);
+          }}
+          title={isSaved ? "Remove bookmark" : "Bookmark this note"}
+          className="font-special-elite flex items-center justify-center gap-2 rounded-sm px-3 py-2 text-[10px] uppercase tracking-wider transition"
+          style={{
+            border: `1px solid ${isSaved ? "rgba(80,100,160,0.4)" : "rgba(100,60,10,0.2)"}`,
+            background: isSaved ? "rgba(80,100,160,0.1)" : "transparent",
+            color: isSaved ? "#354080" : "#6a4515",
+            opacity: !isLoggedIn ? 0.6 : 1,
+          }}
+        >
+          <Bookmark className={`h-4 w-4 ${isSaved ? "fill-current" : ""}`} />
+          <span>{note.savesCount ?? 0}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={handleShare}
+          title="Share this note"
+          className="font-special-elite flex items-center justify-center gap-2 rounded-sm px-3 py-2 text-[10px] uppercase tracking-wider transition hover:bg-[#6a4515]/10"
+          style={{
+            border: "1px solid rgba(100,60,10,0.2)",
+            background: "transparent",
+            color: "#6a4515",
+          }}
+        >
+          <Share2 className="h-4 w-4" />
+          <span>{localSharesCount}</span>
         </button>
       </div>
 
