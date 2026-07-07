@@ -52,7 +52,7 @@ const LoginForm = () => {
     };
 
     return (
-        <div className="relative min-h-screen flex items-center justify-center p-8 overflow-hidden font-crimson"
+        <div className="relative min-h-screen flex items-center justify-center p-3 sm:p-8 overflow-x-hidden overflow-y-auto font-crimson"
             style={{ backgroundColor: "#1a0f00" }}>
 
             {/* Horizontal ruled lines overlay */}
@@ -75,10 +75,10 @@ const LoginForm = () => {
             ))}
 
             {/* Notebook */}
-            <div className="relative w-full max-w-md">
+            <div className="relative w-full max-w-md my-8">
 
                 {/* Spiral binding */}
-                <div className="absolute left-11 top-0 bottom-0 w-6 z-10 flex flex-col justify-around items-center"
+                <div className="absolute left-2 sm:left-11 top-0 bottom-0 w-6 z-10 flex flex-col justify-around items-center"
                     style={{ background: "#2a1800", borderLeft: "2px solid #3d2200", borderRight: "2px solid #1a0d00" }}>
                     {Array.from({ length: 16 }).map((_, i) => (
                         <div key={i} className="rounded-full"
@@ -87,10 +87,9 @@ const LoginForm = () => {
                 </div>
 
                 {/* Paper */}
-                <div className="relative ml-11 rounded-r"
+                <div className="relative ml-2 sm:ml-11 rounded-r py-8 pr-5 pl-12 sm:py-12 sm:pr-10 sm:pl-16"
                     style={{
                         background: "linear-gradient(180deg, #f2e4b5 0%, #f5e9c8 30%, #f0e2b8 60%, #ede0b4 100%)",
-                        padding: "3rem 2.5rem 2.5rem 3rem",
                         boxShadow: "-4px 0 12px rgba(0,0,0,0.4), 4px 4px 20px rgba(0,0,0,0.5)",
                     }}>
 
@@ -99,7 +98,7 @@ const LoginForm = () => {
                         style={{ backgroundImage: "repeating-linear-gradient(180deg, transparent, transparent 31px, rgba(100,60,10,0.12) 31px, rgba(100,60,10,0.12) 32px)" }} />
 
                     {/* Red margin line */}
-                    <div className="absolute top-0 bottom-0" style={{ left: 52, width: 1.5, background: "rgba(180,40,30,0.35)" }} />
+                    <div className="absolute top-0 bottom-0 left-8 sm:left-[52px]" style={{ width: 1.5, background: "rgba(180,40,30,0.35)" }} />
 
                     <p className="font-special-elite" style={{ fontSize: 11, color: "#6b4c1e", letterSpacing: "0.2em", textTransform: "uppercase", opacity: 0.7, marginBottom: "0.4rem" }}>
                         Volume I — The Ledger of Wrongs
