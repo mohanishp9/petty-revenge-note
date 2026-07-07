@@ -31,32 +31,44 @@
 **Backend**
 * Node.js, Express
 * MongoDB (Replica Set required for transactions)
-* Redis
-* JSON Web Tokens (JWT)
+* Redis (OTP sessions, token blacklist, rate-limit store)
+* JSON Web Tokens (JWT) — access + refresh with rotation and reuse detection
 * Helmet, Morgan, Envalid
+* Brevo (transactional email for OTP flows)
 
 ## Features & Implementation
 
+### Notes
+Users create notes with a subject, content, category emoji, and optional username visibility. Notes support likes, emoji reactions (😂 😡 😳 😭), comments with replies, saves, and share count tracking.
+
 ### Admin & Moderation
-The admin panel includes tools for managing users, notes, and comments. It features:
+The admin panel (isolated Next.js app) includes tools for managing users, notes, and comments. It features:
 * Global system controls (maintenance mode, toggle signups).
 * Audit logging for admin actions.
+* Report queue — users can report inappropriate notes; admins review reports with full note context and decide whether to delete.
 * Filtering and sorting for moderation tables.
 
+### Authentication
+Two-step OTP registration via email (Brevo). JWT access tokens (15 min) with rolling refresh tokens (7 days). Refresh token rotation is enforced — each issued refresh token is blacklisted in Redis on use, preventing reuse if a token is stolen.
+
 ### Data Deletion
-Account and content deletion uses MongoDB transactions (`mongoose.startSession()`). The deletion cascades through the user's notes, comments, and likes. If a step fails, the transaction aborts to maintain database consistency.
+Account and content deletion uses MongoDB transactions (`mongoose.startSession()`). The deletion cascades through the user's notes, reactions, likes, comments, saves, and reports. If any step fails, the transaction aborts to maintain database consistency.
 
 ### OTP Verification
-OTP flows use Redis optimistic locking. The backend uses `WATCH`/`MULTI`/`EXEC` to track and limit verification attempts, preventing race conditions from concurrent requests.
+OTP flows use Redis optimistic locking. The backend uses `WATCH`/`MULTI`/`EXEC` to track and limit verification attempts, preventing race conditions from concurrent requests. OTPs expire in 10 minutes with a 5-attempt limit.
 
 ### Data Schema
-The `Note` schema uses denormalized counter fields (`likes`, `commentsCount`). When a user interacts with a note, the backend performs an `$inc` operation on the Note document alongside the specific interaction record to avoid aggregation queries on read.
+The `Note` schema uses denormalized counter fields (`likes`, `commentsCount`, `reactionsCount`, `savesCount`, `sharesCount`, `reportsCount`). When a user interacts with a note, the backend performs an `$inc` operation on the Note document alongside the specific interaction record to avoid aggregation queries on read.
 
 ### Rate Limiting
-The API uses `express-rate-limit` with a Redis store. It applies a general rate limit across all routes and a stricter limit for OTP endpoints using an IP and Email composite key.
+The API uses `express-rate-limit` with a Redis store. Rate limiters applied:
+* `apiLimiter` — general limit across all routes.
+* `otpRequestLimiter` — stricter limit for OTP endpoints, keyed on IP + email composite.
+* `searchRateLimiter` — dedicated limit for full-text search.
+* `shareRateLimiter` — dedicated limit for share count increments.
 
 ### Atlas Search Setup (Required for fuzzy search)
-Petty Revenge Notes uses MongoDB Atlas Search for rich text search capabilities on notes. 
+Petty Revenge Notes uses MongoDB Atlas Search for rich text search capabilities on notes.
 If you skip this step, the app will automatically fall back to standard regex search, but you will lose typo tolerance (fuzzy matching) and text scoring.
 
 1. In MongoDB Atlas, go to your cluster -> **Atlas Search**.
@@ -91,12 +103,14 @@ If you skip this step, the app will automatically fall back to standard regex se
    MONGO_URI=mongodb://host.docker.internal:27017/petty-revenge
    REDIS_HOST=redis
    REDIS_PORT=6379
-   JWT_SECRET=your_secret_key
-   JWT_REFRESH_SECRET=your_refresh_secret
+   JWT_ACCESS_SECRET=your_access_secret_key
+   JWT_REFRESH_SECRET=your_refresh_secret_key
    BREVO_API_KEY=your_brevo_key
    BREVO_FROM_EMAIL=noreply@yourdomain.com
    NODE_ENV=development
    ```
+
+   > **Note:** The example above uses `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` — both are required. The README previously listed `JWT_SECRET` which does not match the actual `env.ts` config and will cause the server to fail to start.
 
 3. **Install Dependencies**
    ```bash
@@ -108,10 +122,10 @@ If you skip this step, the app will automatically fall back to standard regex se
    ```bash
    # Terminal 1: Backend and Redis
    docker compose up --build
-   
+
    # Terminal 2: Public Frontend (http://localhost:3000)
    cd frontend && npm run dev
-   
+
    # Terminal 3: Admin Panel (http://localhost:3002)
    cd admin && npm run dev
    ```
