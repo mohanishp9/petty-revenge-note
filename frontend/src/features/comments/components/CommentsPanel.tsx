@@ -76,10 +76,10 @@ const CommentsPanel = ({
 
       {/* Modal container */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="relative w-full max-w-5xl" style={{ height: "82vh" }}>
+        <div className="relative w-full max-w-5xl h-[90vh] lg:h-[82vh]">
           {/* Modal content - split layout */}
           <div
-            className="flex flex-row h-full gap-0"
+            className="flex flex-col lg:flex-row h-full gap-0"
             style={{
               background: "transparent",
               border: "none",
@@ -88,7 +88,7 @@ const CommentsPanel = ({
           >
             {/* Left side - Original Note */}
             <div
-              className="flex flex-col border-b lg:border-b-0 lg:border-r lg:w-1/2 overflow-hidden"
+              className="flex flex-col border-b lg:border-b-0 lg:border-r w-full lg:w-1/2 h-1/3 lg:h-full overflow-hidden"
               style={{ borderColor: "rgba(120,80,20,0.14)" }}
             >
               <div className="px-6 py-5 flex-shrink-0">
@@ -172,12 +172,11 @@ const CommentsPanel = ({
 
             {/* Right side - Comments */}
             <div
-              className="flex flex-col lg:w-1/2 rounded-sm overflow-hidden"
+              className="flex flex-col w-full lg:w-1/2 h-2/3 lg:h-full rounded-sm overflow-hidden"
               style={{
                 background: "linear-gradient(180deg, #f8ecd0 0%, #f2e2b2 100%)",
                 border: "1px solid rgba(120,80,20,0.25)",
                 boxShadow: "8px 12px 48px rgba(10,5,0,0.6), 0 4px 16px rgba(10,5,0,0.4), inset 0 1px 0 rgba(255,240,180,0.4)",
-                height: "100%",
               }}
             >
               <div
