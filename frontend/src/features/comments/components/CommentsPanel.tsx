@@ -12,6 +12,7 @@ export type CommentsPanelProps = {
   commentInput: string;
   commentsState: CommentsState;
   isLoggedIn: boolean;
+  isSubmitting?: boolean;
   currentUser: unknown;
   onChangeInput: (value: string) => void;
   onClose: () => void;
@@ -25,6 +26,7 @@ const CommentsPanel = ({
   commentInput,
   commentsState,
   isLoggedIn,
+  isSubmitting = false,
   currentUser,
   onChangeInput,
   onClose,
@@ -296,17 +298,26 @@ const CommentsPanel = ({
                   />
                   <button
                     type="submit"
-                    disabled={!isLoggedIn || !commentInput.trim()}
+                    disabled={!isLoggedIn || !commentInput.trim() || isSubmitting}
                     className="font-special-elite flex w-full items-center justify-center gap-2 rounded-sm px-4 py-3 text-[10px] uppercase tracking-[0.22em] transition"
                     style={{
                       background: "rgba(122,90,34,0.12)",
                       border: "1px solid rgba(120,80,20,0.22)",
                       color: "#6a4515",
-                      opacity: !isLoggedIn || !commentInput.trim() ? 0.6 : 1,
+                      opacity: !isLoggedIn || !commentInput.trim() || isSubmitting ? 0.6 : 1,
                     }}
                   >
-                    <Send className="h-4 w-4" />
-                    <span>Add Comment</span>
+                    {isSubmitting ? (
+                      <>
+                        <LoaderCircle className="h-4 w-4 animate-spin" />
+                        <span>Submitting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4" />
+                        <span>Add Comment</span>
+                      </>
+                    )}
                   </button>
                 </form>
               </div>

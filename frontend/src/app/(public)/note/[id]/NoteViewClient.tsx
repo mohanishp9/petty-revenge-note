@@ -24,6 +24,7 @@ export default function NoteViewClient({ noteId }: { noteId: string }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const { user, accessToken, isInitialized } = useSelector((state: RootState) => state.auth);
     const isLoggedIn = !!accessToken;
@@ -77,27 +78,38 @@ export default function NoteViewClient({ noteId }: { noteId: string }) {
 
     const handleCommentSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        if (!commentInput.trim()) return;
+        if (!commentInput.trim() || isSubmitting) return;
 
-        const action = await dispatch(
-            addComment({
-                noteId,
-                text: commentInput.trim(),
-            })
-        );
+        setIsSubmitting(true);
+        try {
+            const action = await dispatch(
+                addComment({
+                    noteId,
+                    text: commentInput.trim(),
+                })
+            );
 
-        if (addComment.fulfilled.match(action)) {
-            setCommentInput("");
+            if (addComment.fulfilled.match(action)) {
+                setCommentInput("");
+            }
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     const handleReplySubmit = async (commentId: string, text: string) => {
-        await dispatch(
-            addReply({
-                commentId,
-                text: text.trim(),
-            })
-        );
+        if (!text.trim() || isSubmitting) return;
+        setIsSubmitting(true);
+        try {
+            await dispatch(
+                addReply({
+                    commentId,
+                    text: text.trim(),
+                })
+            );
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleLoadMoreComments = () => {
@@ -152,6 +164,7 @@ export default function NoteViewClient({ noteId }: { noteId: string }) {
                     commentsState={commentsState}
                     isLoggedIn={isLoggedIn}
                     currentUser={user}
+                    isSubmitting={isSubmitting}
                     onChangeInput={setCommentInput}
                     onClose={() => setIsCommentsOpen(false)}
                     onLoadMore={handleLoadMoreComments}

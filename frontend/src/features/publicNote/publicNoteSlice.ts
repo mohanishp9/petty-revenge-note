@@ -22,6 +22,7 @@ export const initialState: getAllNotesState = {
     error: null,
 
     count: 0,
+    nextCursor: null,
 }
 
 // get all notes
@@ -92,10 +93,11 @@ const publicNoteSlice = createSlice({
             })
             .addCase(getAllNotes.fulfilled, (state, action) => {
                 const requestedPage = action.meta.arg.page ?? 1;
+                const requestedCursor = action.meta.arg.cursor;
                 const incomingNotes = action.payload.data;
 
                 state.loading = false;
-                state.notes = requestedPage > 1
+                state.notes = (requestedPage > 1 || requestedCursor)
                     ? [
                         ...state.notes,
                         ...incomingNotes.filter(
@@ -104,6 +106,7 @@ const publicNoteSlice = createSlice({
                     ]
                     : incomingNotes;
                 state.count = action.payload.count;
+                state.nextCursor = action.payload.nextCursor;
             })
             .addCase(getAllNotes.rejected, (state, action) => {
                 state.loading = false;

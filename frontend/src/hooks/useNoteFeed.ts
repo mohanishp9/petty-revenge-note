@@ -10,9 +10,10 @@ type UseNoteFeedParams = {
   hasMore: boolean;
   loading: boolean;
   accessToken: string | null;
+  nextCursor?: string | null;
 };
 
-export const useNoteFeed = ({ hasMore, loading, accessToken }: UseNoteFeedParams) => {
+export const useNoteFeed = ({ hasMore, loading, accessToken, nextCursor }: UseNoteFeedParams) => {
   const dispatch = useAppDispatch();
   const [sort, setSort] = useState<getNotesParams["sort"] | undefined>(undefined);
   const [page, setPage] = useState(1);
@@ -27,11 +28,11 @@ export const useNoteFeed = ({ hasMore, loading, accessToken }: UseNoteFeedParams
     dispatch(
       getAllNotes(
         sort
-          ? { sort, page, limit: NOTES_PER_PAGE }
-          : { page, limit: NOTES_PER_PAGE },
+          ? { sort, page, cursor: page > 1 && nextCursor ? nextCursor : undefined, limit: NOTES_PER_PAGE }
+          : { page, cursor: page > 1 && nextCursor ? nextCursor : undefined, limit: NOTES_PER_PAGE },
       ),
     );
-  }, [dispatch, sort, page, selectedEmoji, accessToken]);
+  }, [dispatch, sort, page, selectedEmoji, accessToken]); // Don't add nextCursor to deps to avoid infinite loops on pagination
 
   useEffect(() => {
     const node = loadMoreRef.current;
