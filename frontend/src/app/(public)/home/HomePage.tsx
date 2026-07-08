@@ -28,7 +28,7 @@ const COMMENTS_PER_PAGE = 10;
 
 const HomePage = () => {
   const dispatch = useAppDispatch();
-  const { notes, loading, error, count } = useSelector(
+  const { notes, loading, error, count, nextCursor } = useSelector(
     (state: RootState) => state.publicNote,
   );
   const { accessToken, user } = useSelector((state: RootState) => state.auth);
@@ -41,10 +41,11 @@ const HomePage = () => {
   const [activeCommentNoteId, setActiveCommentNoteId] = useState<string | null>(null);
   const [commentInput, setCommentInput] = useState("");
   const [isEmojiMenuOpen, setIsEmojiMenuOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const emojiMenuRef = useRef<HTMLDivElement | null>(null);
 
   const isSearching = Boolean(searchState.query);
-  const hasMore = isSearching ? searchState.hasMore : count === NOTES_PER_PAGE;
+  const hasMore = isSearching ? searchState.hasMore : Boolean(nextCursor);
   const feedLoading = isSearching ? searchState.loading : (topNotesByEmoji.loading || loading);
 
   const {
@@ -53,7 +54,7 @@ const HomePage = () => {
     loadMoreRef,
     handleSortChange: baseHandleSortChange,
     handleEmojiSortChange: baseHandleEmojiSortChange,
-  } = useNoteFeed({ hasMore, loading: feedLoading, accessToken });
+  } = useNoteFeed({ hasMore, loading: feedLoading, accessToken, nextCursor });
 
   const {
     isSearchExpanded,
@@ -176,36 +177,46 @@ const HomePage = () => {
   const handleCommentSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!activeCommentNoteId || !commentInput.trim()) {
+    if (!activeCommentNoteId || !commentInput.trim() || isSubmitting) {
       return;
     }
 
-    const action = await dispatch(
-      addComment({
-        noteId: activeCommentNoteId,
-        text: commentInput.trim(),
-      }),
-    );
+    setIsSubmitting(true);
+    try {
+      const action = await dispatch(
+        addComment({
+          noteId: activeCommentNoteId,
+          text: commentInput.trim(),
+        }),
+      );
 
-    if (addComment.fulfilled.match(action)) {
-      setCommentInput("");
+      if (addComment.fulfilled.match(action)) {
+        setCommentInput("");
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleReplySubmit = async (commentId: string, text: string) => {
-    if (!text.trim()) {
+    if (!text.trim() || isSubmitting) {
       return;
     }
 
-    const action = await dispatch(
-      addReply({
-        commentId,
-        text: text.trim(),
-      }),
-    );
+    setIsSubmitting(true);
+    try {
+      const action = await dispatch(
+        addReply({
+          commentId,
+          text: text.trim(),
+        }),
+      );
 
-    if (addReply.fulfilled.match(action)) {
-      // Reply was added successfully
+      if (addReply.fulfilled.match(action)) {
+        // Reply was added successfully
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -355,6 +366,7 @@ const HomePage = () => {
             commentsState={commentsState}
             isLoggedIn={Boolean(accessToken)}
             currentUser={user}
+            isSubmitting={isSubmitting}
             onChangeInput={setCommentInput}
             onClose={handleCloseComments}
             onLoadMore={handleLoadMoreComments}

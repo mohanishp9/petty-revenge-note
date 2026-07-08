@@ -8,71 +8,105 @@ import { emojiSchema, noteQuerySchema, createNoteSchema } from "../utils/note.va
 import type { Request, Response } from "express";
 import Like from "../models/Like.model";
 import SavedNote from "../models/SavedNote.model";
+import redisClient from "../config/redis";
 
 // @desc Get all notes also sort
 // @route GET /?sort=mostLiked&page=1&limit=10
 // @access Public
 const getNotesController = asyncHandler(async (req: Request, res: Response) => {
-    const { sort, page, limit } = noteQuerySchema.parse(req.query);
+    const { sort, page, limit, cursor } = noteQuerySchema.parse(req.query);
     const sortQuery = sort as string;
-
     const pageQuery = Number(page) || 1;
     const limitQuery = Number(limit) || 12;
 
-    let sortOption: Record<string, SortOrder> = { createdAt: -1 };
+    const userId = req.user?._id;
 
-    if (sortQuery === "mostLiked") {
-        sortOption = { likes: -1 };
-    } else if (sortQuery === "oldest") {
-        sortOption = { createdAt: 1 };
+    // Cache lookup for anonymous users
+    let cacheKey = null;
+    if (!userId) {
+        cacheKey = `public_feed:${sortQuery || 'new'}:${cursor || pageQuery}:${limitQuery}`;
+        const cached = await redisClient.get(cacheKey);
+        if (cached) {
+            return res.status(200).json(JSON.parse(cached));
+        }
     }
 
-    const notes = await Note.find()
+    let sortOption: Record<string, SortOrder> = { _id: -1 };
+    let matchQuery: any = {};
+
+    if (cursor) {
+        if (sortQuery === "mostLiked") {
+            const parts = cursor.split("_");
+            if (parts.length === 2 && mongoose.Types.ObjectId.isValid(parts[1])) {
+                const [likesStr, idStr] = parts;
+                matchQuery = {
+                    $or: [
+                        { likes: { $lt: Number(likesStr) } },
+                        { likes: Number(likesStr), _id: { $lt: new mongoose.Types.ObjectId(idStr) } }
+                    ]
+                };
+            }
+        } else if (sortQuery === "oldest") {
+            if (mongoose.Types.ObjectId.isValid(cursor)) {
+                matchQuery = { _id: { $gt: new mongoose.Types.ObjectId(cursor) } };
+            }
+        } else {
+            if (mongoose.Types.ObjectId.isValid(cursor)) {
+                matchQuery = { _id: { $lt: new mongoose.Types.ObjectId(cursor) } };
+            }
+        }
+    }
+
+    if (sortQuery === "mostLiked") {
+        sortOption = { likes: -1, _id: -1 };
+    } else if (sortQuery === "oldest") {
+        sortOption = { _id: 1 };
+    }
+
+    let query = Note.find(matchQuery)
         .populate("user", "username")
         .select("-comments")
         .sort(sortOption)
-        .skip((pageQuery - 1) * limitQuery)
-        .limit(limitQuery)
-        .lean();
+        .limit(limitQuery);
 
-    const userId = req.user?._id;
+    // Fallback skip for page-based query (if no cursor passed)
+    if (!cursor && pageQuery > 1) {
+        query = query.skip((pageQuery - 1) * limitQuery);
+    }
+
+    const notes = await query.lean();
+
+    const nextCursor = notes.length === limitQuery ? (
+        sortQuery === "mostLiked" ? `${notes[notes.length - 1].likes}_${notes[notes.length - 1]._id}` : notes[notes.length - 1]._id
+    ) : null;
 
     if (!userId) {
-        return res.status(200).json({
+        const responseData = {
             success: true,
             count: notes.length,
+            nextCursor,
             data: notes.map(note => ({
                 ...note,
                 hasLiked: false,
                 isSaved: false,
                 userReaction: null
             }))
-        });
+        };
+        // Cache anonymous feed for 60 seconds
+        await redisClient.set(cacheKey!, JSON.stringify(responseData), "EX", 60);
+        return res.status(200).json(responseData);
     }
 
     const noteIds = notes.map(n => n._id);
 
-    const likes = await Like.find({
-        user: userId,
-        note: { $in: noteIds }
-    }).lean();
+    const [likes, reactions, savedNotes] = await Promise.all([
+        Like.find({ user: userId, note: { $in: noteIds } }).lean(),
+        Reaction.find({ user: userId, note: { $in: noteIds } }).lean(),
+        SavedNote.find({ user: userId, note: { $in: noteIds } }).lean()
+    ]);
 
     const likedSet = new Set(likes.map(l => l.note.toString()));
-
-    const reactions = await Reaction.find({
-        user: userId,
-        note: { $in: noteIds }
-    }).lean();
-
-    const reactionMap = new Map(
-        reactions.map(r => [r.note.toString(), r.emoji])
-    );
-
-    const savedNotes = await SavedNote.find({
-        user: userId,
-        note: { $in: noteIds }
-    }).lean();
-
+    const reactionMap = new Map(reactions.map(r => [r.note.toString(), r.emoji]));
     const savedSet = new Set(savedNotes.map(s => s.note.toString()));
 
     const enrichedNotes = notes.map(note => ({
@@ -85,6 +119,7 @@ const getNotesController = asyncHandler(async (req: Request, res: Response) => {
     res.status(200).json({
         success: true,
         count: notes.length,
+        nextCursor,
         data: enrichedNotes,
     });
 });

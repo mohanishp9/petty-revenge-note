@@ -39,6 +39,7 @@
     export interface getAllNotesResponse {
         success: boolean;
         count: number;
+        nextCursor?: string | null;
         data: Note[];
     }
 
@@ -49,12 +50,14 @@
         error: string | null;
 
         count: number;
+        nextCursor?: string | null;
     }
 
     export interface getNotesParams {
         sort?: "mostLiked" | "oldest"; // optional sorting
         page?: number;
         limit?: number;
+        cursor?: string;
     }
     //{
     //     "success": true,

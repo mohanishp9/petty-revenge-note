@@ -11,7 +11,8 @@ import { addCommentSchema, addReplySchema, editCommentSchema, deleteCommentSchem
 import type { CreateNoteInput } from "../utils/note.validator";
 import type { Request, Response } from "express";
 import mongoose from "mongoose";
-
+import crypto from "crypto";
+import redisClient from "../config/redis";
 
 // @desc Create Note
 // @route POST /
@@ -241,6 +242,15 @@ const addCommentController = asyncHandler(async (req: Request, res: Response) =>
 
     const { noteId, text } = parsed.data;
 
+    const textHash = crypto.createHash('md5').update(text).digest('hex');
+    const lockKey = `comment:${userId}:${noteId}:${textHash}`;
+
+    // Atomic idempotency lock: 3-second cooldown
+    const acquired = await redisClient.set(lockKey, "1", "EX", 3, "NX");
+    if (!acquired) {
+        return res.status(409).json({ message: "Duplicate comment" });
+    }
+
     // Guard: verify the note still exists before creating a comment
     const noteExists = await Note.exists({ _id: noteId });
     if (!noteExists) {
@@ -311,6 +321,15 @@ const addReplyController = asyncHandler(async (req: Request, res: Response) => {
         return res.status(400).json({
             message: "Cannot reply to a reply. Only one level of nesting is allowed.",
         });
+    }
+
+    const textHash = crypto.createHash('md5').update(text).digest('hex');
+    const lockKey = `reply:${userId}:${commentId}:${textHash}`;
+
+    // Atomic idempotency lock: 3-second cooldown
+    const acquired = await redisClient.set(lockKey, "1", "EX", 3, "NX");
+    if (!acquired) {
+        return res.status(409).json({ message: "Duplicate comment" });
     }
 
     const session = await mongoose.startSession();
