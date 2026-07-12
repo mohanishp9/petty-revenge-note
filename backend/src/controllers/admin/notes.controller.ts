@@ -72,7 +72,7 @@ export const deleteNoteAdmin = asyncHandler(async (req: Request, res: Response) 
         }
 
         // 4. Delete all likes on this note (field is noteId, not note)
-        await Like.deleteMany({ note: noteId }).session(session);
+        await Like.deleteMany({ noteId: noteId }).session(session);
 
         // 5. Delete all reports on this note
         await Report.deleteMany({ note: noteId }).session(session);
