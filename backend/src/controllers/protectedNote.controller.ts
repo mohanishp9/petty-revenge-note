@@ -73,20 +73,20 @@ const toggleLikeController = asyncHandler(async (req: Request, res: Response) =>
 
     try {
         // Check if like already exists inside the transaction
-        const existingLike = await Like.findOne({ user: userId, note: noteId }).session(session);
+        const existingLike = await Like.findOne({ userId: userId, noteId: noteId }).session(session);
 
         let liked: boolean;
 
         if (existingLike) {
             // Already liked → remove like
-            const delResult = await Like.deleteOne({ user: userId, note: noteId }).session(session);
+            const delResult = await Like.deleteOne({ userId: userId, noteId: noteId }).session(session);
             if (delResult.deletedCount > 0) {
                 await Note.updateOne({ _id: noteId }, { $inc: { likes: -1 } }).session(session);
             }
             liked = false;
         } else {
             // Not liked → create like
-            await Like.create([{ user: userId, note: noteId }], { session });
+            await Like.create([{ userId: userId, noteId: noteId }], { session });
             await Note.updateOne({ _id: noteId }, { $inc: { likes: 1 } }).session(session);
             liked = true;
         }
@@ -101,7 +101,7 @@ const toggleLikeController = asyncHandler(async (req: Request, res: Response) =>
         if (err.code === 11000) {
             // Race condition: Like was created concurrently.
             // Recalculate actual count to be safe.
-            const actualCount = await Like.countDocuments({ note: noteId });
+            const actualCount = await Like.countDocuments({ noteId: noteId });
             await Note.updateOne({ _id: noteId }, { $set: { likes: actualCount } });
             
             return res.status(200).json({
@@ -422,7 +422,7 @@ const deleteNoteController = asyncHandler(async (req: Request, res: Response) =>
         await Note.deleteOne({ _id: noteId }, { session });
 
         // Delete related likes
-        await Like.deleteMany({ note: noteId }, { session });
+        await Like.deleteMany({ noteId: noteId }, { session });
 
         // Delete related reactions
         await Reaction.deleteMany({ note: noteId }, { session });

@@ -100,12 +100,12 @@ const getNotesController = asyncHandler(async (req: Request, res: Response) => {
     const noteIds = notes.map(n => n._id);
 
     const [likes, reactions, savedNotes] = await Promise.all([
-        Like.find({ user: userId, note: { $in: noteIds } }).lean(),
-        Reaction.find({ user: userId, note: { $in: noteIds } }).lean(),
-        SavedNote.find({ user: userId, note: { $in: noteIds } }).lean()
+        Like.find({ userId: userId, noteId: { $in: noteIds } }).lean(),
+        Reaction.find({ userId: userId, noteId: { $in: noteIds } }).lean(),
+        SavedNote.find({ userId: userId, noteId: { $in: noteIds } }).lean()
     ]);
 
-    const likedSet = new Set(likes.map(l => l.note.toString()));
+    const likedSet = new Set(likes.map(l => l.noteId.toString()));
     const reactionMap = new Map(reactions.map(r => [r.note.toString(), r.emoji]));
     const savedSet = new Set(savedNotes.map(s => s.note.toString()));
 
@@ -170,7 +170,7 @@ const getTopNotesByEmojiController = asyncHandler(async (req: Request, res: Resp
             user: userId,
             note: { $in: noteIds },
         }).lean();
-        const likedSet = new Set(likes.map(l => l.note.toString()));
+        const likedSet = new Set(likes.map(l => l.noteId.toString()));
 
         const reactions = await Reaction.find({
             user: userId,
@@ -190,7 +190,7 @@ const getTopNotesByEmojiController = asyncHandler(async (req: Request, res: Resp
             count: item.count,
             note: {
                 ...item.note,
-                hasLiked: likes.some(like => like.note.toString() === item.note._id.toString()),
+                hasLiked: likes.some(like => like.noteId.toString() === item.note._id.toString()),
                 isSaved: savedSet.has(item.note._id.toString()),
                 userReaction: reactionMap.get(item.note._id.toString()) || null
             }
@@ -402,7 +402,7 @@ const searchNotesController = asyncHandler(async (req: Request, res: Response) =
             user: userId,
             note: { $in: noteIds },
         }).lean();
-        const likedSet = new Set(likes.map(l => l.note.toString()));
+        const likedSet = new Set(likes.map(l => l.noteId.toString()));
 
         const reactions = await Reaction.find({
             user: userId,
@@ -483,7 +483,7 @@ const getSingleNoteController = asyncHandler(async (req: Request, res: Response)
     let userReaction = null;
 
     if (userId) {
-        const like = await Like.findOne({ user: userId, note: noteId }).lean();
+        const like = await Like.findOne({ userId: userId, noteId: noteId }).lean();
         if (like) hasLiked = true;
 
         const reaction = await Reaction.findOne({ user: userId, note: noteId }).lean();

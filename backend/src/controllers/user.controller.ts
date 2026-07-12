@@ -403,7 +403,7 @@ export const deleteAccountConfirm = asyncHandler(async (req: Request, res: Respo
 
         if (userNoteIds.length > 0) {
             // 1a. Delete all Likes on the user's notes (from any user)
-            await Like.deleteMany({ note: { $in: userNoteIds } }).session(session);
+            await Like.deleteMany({ noteId: { $in: userNoteIds } }).session(session);
 
             // 1b. Delete all Reactions on the user's notes (from any user)
             await Reaction.deleteMany({ note: { $in: userNoteIds } }).session(session);
@@ -418,15 +418,15 @@ export const deleteAccountConfirm = asyncHandler(async (req: Request, res: Respo
 
         // 2. Delete user's Likes on *other* users' notes and adjust the like counters.
         //    We bulk-adjust instead of per-document to avoid cursor races.
-        const userLikes = await Like.find({ user: userId as Types.ObjectId }, 'note').session(session).lean();
-        const likedNoteIds = userLikes.map(like => like.note);
+        const userLikes = await Like.find({ userId: userId as Types.ObjectId }, 'noteId').session(session).lean();
+        const likedNoteIds = userLikes.map(like => like.noteId);
 
         if (likedNoteIds.length > 0) {
             await Note.updateMany(
                 { _id: { $in: likedNoteIds } },
                 { $inc: { likes: -1 } }
             ).session(session);
-            await Like.deleteMany({ user: userId }).session(session);
+            await Like.deleteMany({ userId: userId }).session(session);
         }
 
         // 3. Delete user's Reactions on *other* users' notes and adjust reactionsCount map.
