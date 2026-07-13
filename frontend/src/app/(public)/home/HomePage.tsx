@@ -23,14 +23,31 @@ import CommentsPanel from "@/features/comments/components/CommentsPanel";
 import { useNoteFeed, NOTES_PER_PAGE } from "@/hooks/useNoteFeed";
 import { useSearchFeed } from "@/hooks/useSearchFeed";
 import { toggleSave } from "@/features/savedNotes/savedNotesSlice";
+import { setInitialFeed } from "@/features/publicNote/publicNoteSlice";
+import type { getAllNotesResponse } from "@/features/publicNote/types";
 
 const COMMENTS_PER_PAGE = 10;
 
-const HomePage = () => {
+interface HomePageProps {
+  initialData?: getAllNotesResponse;
+}
+
+const HomePage = ({ initialData }: HomePageProps) => {
   const dispatch = useAppDispatch();
-  const { notes, loading, error, count, nextCursor } = useSelector(
-    (state: RootState) => state.publicNote,
-  );
+  const reduxState = useSelector((state: RootState) => state.publicNote);
+
+  // Use initialData as fallback while Redux hydrates to ensure SSR match
+  const notes = reduxState.notes.length > 0 ? reduxState.notes : (initialData?.data || []);
+  const count = reduxState.count > 0 ? reduxState.count : (initialData?.count || 0);
+  const nextCursor = reduxState.nextCursor || initialData?.nextCursor || null;
+  const loading = reduxState.notes.length === 0 && !initialData ? reduxState.loading : false;
+  const error = reduxState.error;
+
+  useEffect(() => {
+    if (initialData && initialData.success) {
+      dispatch(setInitialFeed(initialData));
+    }
+  }, [dispatch, initialData]);
   const { accessToken, user } = useSelector((state: RootState) => state.auth);
   const commentsState = useSelector((state: RootState) => state.comments);
   const searchState = useSelector((state: RootState) => state.search);

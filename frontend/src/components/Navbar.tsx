@@ -76,7 +76,7 @@ const Navbar = () => {
                         alt="Petty Revenge Notes Logo"
                         width={140}
                         height={45}
-                        style={{ height: '42px', width: 'auto' }}
+                        style={{ height: '42px', width: 'auto', aspectRatio: '140 / 45' }}
                         className="object-contain"
                         priority
                     />
