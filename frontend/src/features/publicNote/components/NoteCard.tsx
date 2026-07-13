@@ -137,6 +137,7 @@ const NoteCard = ({
           <p
             className="font-crimson text-[12px] italic"
             style={{ color: "#8a6030" }}
+            suppressHydrationWarning
           >
             {new Date(note.createdAt).toLocaleDateString()}
           </p>

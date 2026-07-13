@@ -83,6 +83,12 @@ const publicNoteSlice = createSlice({
             } else {
                 state.notes = state.notes.map(n => n._id === incomingNote._id ? incomingNote : n);
             }
+        },
+        setInitialFeed: (state, action) => {
+            state.notes = action.payload.data;
+            state.count = action.payload.count;
+            state.nextCursor = action.payload.nextCursor;
+            state.loading = false;
         }
     },
     extraReducers: (builder) => {
@@ -268,5 +274,5 @@ const publicNoteSlice = createSlice({
     }
 });
 
-export const { addSingleNote } = publicNoteSlice.actions;
+export const { addSingleNote, setInitialFeed } = publicNoteSlice.actions;
 export default publicNoteSlice.reducer;
