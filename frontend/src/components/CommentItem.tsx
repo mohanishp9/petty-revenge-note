@@ -132,7 +132,7 @@ const CommentItem = ({
                             </button>
                         )}
                         <p className="font-crimson text-xs italic" style={{ color: "#8a6030" }}>
-                            {new Date(comment.createdAt).toLocaleString()}
+                            {new Date(comment.createdAt).toLocaleDateString()}
                         </p>
                     </div>
                 </div>

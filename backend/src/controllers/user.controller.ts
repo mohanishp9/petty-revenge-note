@@ -8,6 +8,7 @@ import Like from '../models/Like.model';
 import Reaction from '../models/Reaction.model';
 import redisClient from '../config/redis';
 import { generateOtp, hashOtp, verifyOtp } from '../utils/otpUtils';
+import { registerSchema, verifyOtpSchema, loginSchema, updatePasswordSchema } from "../utils/validation";
 import { sendOtpEmail } from '../services/emailService';
 
 export const checkUsername = asyncHandler(async (req: Request, res: Response) => {
@@ -221,22 +222,12 @@ export const verifyEmailUpdate = asyncHandler(async (req: Request, res: Response
 });
 
 export const updatePassword = asyncHandler(async (req: Request, res: Response) => {
-    const { currentPassword, newPassword } = req.body;
+    const { currentPassword, newPassword } = updatePasswordSchema.parse(req.body);
     const userId = req.user?._id;
 
     if (!userId) {
         res.status(401);
         throw new Error('Not authorized');
-    }
-
-    if (!currentPassword || !newPassword) {
-        res.status(400);
-        throw new Error('Please provide both current and new passwords');
-    }
-
-    if (newPassword.length < 6) {
-        res.status(400);
-        throw new Error('New password must be at least 6 characters long');
     }
 
     if (currentPassword === newPassword) {

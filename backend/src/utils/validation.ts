@@ -6,8 +6,8 @@ export const registerSchema = z.object({
     password: z.string()
         .min(8, { message: "Password must have at least 8 characters" })
         .max(100, { message: "Password must have at most 100 characters" })
-        .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
-        .regex(/[0-9]/, { message: "Password must contain at least one number" }),
+        .regex(/[A-Z]/, { message: "Password must contain at least one Capital letter and one number" })
+        .regex(/[0-9]/, { message: "Password must contain at least one Capital letter and one number" }),
 });
 
 export const loginSchema = z.object({
@@ -28,14 +28,23 @@ export const forgotPasswordSchema = z.object({
     email: z.string().email({ message: "Invalid email" }),
 });
 
+export const updatePasswordSchema = z.object({
+    currentPassword: z.string().min(1, "Current password is required"),
+    newPassword: z.string()
+        .min(8, { message: "Password must have at least 8 characters" })
+        .max(100, { message: "Password must have at most 100 characters" })
+        .regex(/[A-Z]/, { message: "Password must contain at least one Capital letter and one number" })
+        .regex(/[0-9]/, { message: "Password must contain at least one Capital letter and one number" })
+});
+
 export const resetPasswordSchema = z.object({
     email: z.string().email({ message: "Invalid email" }),
     otp: z.string().length(6, { message: "OTP must be exactly 6 digits" }).regex(/^\d+$/, { message: "OTP must be numeric" }),
     newPassword: z.string()
         .min(8, { message: "Password must have at least 8 characters" })
         .max(100, { message: "Password must have at most 100 characters" })
-        .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
-        .regex(/[0-9]/, { message: "Password must contain at least one number" }),
+        .regex(/[A-Z]/, { message: "Password must contain at least one Capital letter and one number" })
+        .regex(/[0-9]/, { message: "Password must contain at least one Capital letter and one number" }),
 });
 
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;

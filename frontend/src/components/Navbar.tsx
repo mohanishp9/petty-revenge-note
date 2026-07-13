@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut, ShieldUser } from "lucide-react";
+import { LogOut, ShieldUser, Menu, X } from "lucide-react";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import { useAppDispatch } from "@/app/hook/dispatch";
@@ -33,6 +33,7 @@ const Navbar = () => {
     const dispatch = useAppDispatch();
     const pathname = usePathname();
     const router = useRouter();
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { accessToken, loading, error } = useSelector((state: RootState) => state.auth);
 
     useEffect(() => {
@@ -81,9 +82,9 @@ const Navbar = () => {
                     />
                 </Link>
 
-                {/* Nav links */}
+                {/* Desktop Nav links */}
                 <nav
-                    className="flex items-center gap-1"
+                    className="hidden md:flex items-center gap-1"
                     style={{
                         background: "rgba(240,220,160,0.5)",
                         border: "1px solid rgba(120,80,20,0.2)",
@@ -127,7 +128,7 @@ const Navbar = () => {
                     )}
                 </nav>
 
-                <div className="flex gap-2">
+                <div className="hidden md:flex gap-2">
                     {/* Settings button (only if logged in) */}
                     {isLoggedIn && (
                         <Link
@@ -185,7 +186,80 @@ const Navbar = () => {
                     </Link>
                 </div>
 
+                {/* Mobile Menu Toggle */}
+                <div className="md:hidden">
+                    <button
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        className="flex items-center justify-center"
+                        style={{
+                            width: 42,
+                            height: 42,
+                            borderRadius: 3,
+                            background: "rgba(240,220,160,0.5)",
+                            border: "1px solid rgba(120,80,20,0.25)",
+                            color: "#6a4515",
+                            cursor: "pointer",
+                        }}
+                    >
+                        {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+                    </button>
+                </div>
+
             </div>
+
+            {/* Mobile Menu Dropdown */}
+            {isMobileMenuOpen && (
+                <div 
+                    className="md:hidden absolute top-full left-0 w-full"
+                    style={{
+                        background: "#ede0b4",
+                        borderBottom: "1px solid rgba(120,80,20,0.25)",
+                        boxShadow: "0 8px 16px rgba(80,40,0,0.1)",
+                    }}
+                >
+                    <nav className="flex flex-col gap-2 p-4">
+                        <Link href="/home" onClick={() => setIsMobileMenuOpen(false)} style={navLinkStyle(pathname === "/home" || pathname === "/")}>
+                            Home
+                        </Link>
+                        {!isLoggedIn && (
+                            <>
+                                <Link href="/login" onClick={() => setIsMobileMenuOpen(false)} style={navLinkStyle(pathname === "/login")}>
+                                    Login
+                                </Link>
+                                <Link href="/register" onClick={() => setIsMobileMenuOpen(false)} style={navLinkStyle(pathname === "/register")}>
+                                    Sign Up
+                                </Link>
+                            </>
+                        )}
+                        {isLoggedIn && (
+                            <>
+                                <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} style={navLinkStyle(pathname === "/profile")}>
+                                    Profile
+                                </Link>
+                                <Link href="/settings" onClick={() => setIsMobileMenuOpen(false)} style={navLinkStyle(pathname === "/settings")}>
+                                    Settings
+                                </Link>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsMobileMenuOpen(false);
+                                        handleLogout();
+                                    }}
+                                    disabled={loading}
+                                    style={{
+                                        ...navLinkStyle(false),
+                                        opacity: loading ? 0.6 : 1,
+                                        justifyContent: "flex-start",
+                                    }}
+                                >
+                                    <LogOut style={{ width: 12, height: 12 }} />
+                                    Logout
+                                </button>
+                            </>
+                        )}
+                    </nav>
+                </div>
+            )}
         </header>
     );
 };

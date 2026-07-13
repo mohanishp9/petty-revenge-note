@@ -1,35 +1,28 @@
 @import "tailwindcss";
-
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f2e4ba;
+  --foreground: #3a2008;
   --font-crimson: var(--font-crimson);
   --font-im-fell: var(--font-im-fell);
   --font-special-elite: var(--font-special-elite);
+  --ease-quill: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-seal: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-/* Optional utility classes */
-.font-crimson      { font-family: var(--font-crimson), Georgia, serif; }
-.font-im-fell      { font-family: var(--font-im-fell), Georgia, serif; }
-.font-special-elite { font-family: var(--font-special-elite), monospace; }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-crimson: var(--font-crimson), Georgia, serif;
+  --font-im-fell: var(--font-im-fell), Georgia, serif;
+  --font-special-elite: var(--font-special-elite), monospace;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-crimson), Georgia, serif;
 }
 
 @keyframes fadeIn {
@@ -39,4 +32,48 @@ body {
 
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Ledger Input Framework */
+.ledger-input-group {
+  position: relative;
+  transition: all 0.12s var(--ease-quill);
+}
+
+.ledger-label {
+  display: block;
+  font-family: var(--font-special-elite), monospace;
+  font-size: 11px;
+  color: #7a5a22; /* sepia */
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 0.3rem;
+  transition: color 0.12s var(--ease-quill);
+}
+
+.ledger-input-group:focus-within .ledger-label {
+  color: #8a2510; /* oxblood */
+}
+
+.ledger-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px solid rgba(120, 80, 20, 0.18); /* sepia-line */
+  border-radius: 0;
+  padding: 0.3rem 0.1rem 0.4rem;
+  font-size: 17px;
+  color: #1e0f02; /* ink-primary */
+  outline: none;
+  caret-color: #1e0f02;
+  transition: border-color 0.12s var(--ease-quill), box-shadow 0.12s var(--ease-quill);
+}
+
+.ledger-input:focus {
+  border-bottom: 2px solid rgba(120, 80, 20, 0.9);
+  box-shadow: 0 2px 0 rgba(30, 15, 2, 0.18); /* ink bleed */
+}
+
+.ledger-otp-cell:focus {
+  box-shadow: 0 0 0 1px rgba(138, 37, 16, 0.4);
 }

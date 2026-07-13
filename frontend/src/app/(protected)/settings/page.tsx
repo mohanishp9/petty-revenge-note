@@ -147,8 +147,11 @@ export default function Settings() {
       if (newPassword !== confirmPassword) {
           return toast.error("New passwords do not match.");
       }
-      if (newPassword.length < 6) {
-          return toast.error("Passphrase must be at least 6 characters.");
+      if (newPassword.length < 8) {
+          return toast.error("Passphrase must be at least 8 characters.");
+      }
+      if (!/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+          return toast.error("Passphrase must contain at least one Capital letter and one number.");
       }
       if (currentPassword === newPassword) {
           return toast.error("New passphrase must be different.");
@@ -396,8 +399,8 @@ export default function Settings() {
                                     <div className="flex gap-3 pt-2">
                                         <button 
                                             onClick={handleSavePassword} 
-                                            disabled={loading || !currentPassword || !newPassword || !confirmPassword || newPassword !== confirmPassword || newPassword.length < 6 || currentPassword === newPassword} 
-                                            style={{...buttonBase, opacity: (loading || !currentPassword || !newPassword || !confirmPassword || newPassword !== confirmPassword || newPassword.length < 6 || currentPassword === newPassword) ? 0.5 : 1}} 
+                                            disabled={loading || !currentPassword || !newPassword || !confirmPassword || newPassword !== confirmPassword || newPassword.length < 8 || !/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword) || currentPassword === newPassword} 
+                                            style={{...buttonBase, opacity: (loading || !currentPassword || !newPassword || !confirmPassword || newPassword !== confirmPassword || newPassword.length < 8 || !/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword) || currentPassword === newPassword) ? 0.5 : 1}} 
                                             className="font-special-elite hover:bg-[rgba(80,40,10,0.05)] transition-colors"
                                         >
                                             {loading ? "Saving..." : "Update Passphrase"}

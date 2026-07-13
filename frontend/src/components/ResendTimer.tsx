@@ -57,7 +57,7 @@ const ResendTimer = ({ onResend, isResendLoading, isRateLimited }: ResendTimerPr
                 style={{
                     textAlign: "center",
                     fontSize: 13,
-                    color: "#8b2c2c",
+                    color: "#8a2510",
                     fontStyle: "italic",
                     marginTop: "0.5rem",
                 }}

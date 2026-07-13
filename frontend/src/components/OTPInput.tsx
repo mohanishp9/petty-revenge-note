@@ -80,8 +80,15 @@ const OTPInput = ({ value, onChange, disabled = false }: OTPInputProps) => {
         <div
             role="group"
             aria-label="One-time password input"
-            style={{ display: "flex", gap: "0.5rem", justifyContent: "center" }}
+            style={{ display: "flex", gap: "0.5rem", justifyContent: "center", position: "relative" }}
         >
+            <input type="text" autoComplete="one-time-code" style={{ position: "absolute", opacity: 0, height: 0, width: 0, pointerEvents: "none" }} tabIndex={-1} onChange={(e) => {
+                const pasted = e.target.value.replace(/\D/g, "").slice(0, 6);
+                if (pasted.length === 6) {
+                    const next = pasted.split("");
+                    onChange(next);
+                }
+            }} />
             {Array.from({ length: 6 }).map((_, i) => (
                 <input
                     key={i}
@@ -99,7 +106,7 @@ const OTPInput = ({ value, onChange, disabled = false }: OTPInputProps) => {
                     onKeyDown={(e) => handleKeyDown(e, i)}
                     onPaste={handlePaste}
                     onFocus={(e) => e.target.select()}
-                    className="font-special-elite"
+                    className="ledger-otp-cell"
                     style={{
                         width: 42,
                         height: 52,
@@ -114,9 +121,10 @@ const OTPInput = ({ value, onChange, disabled = false }: OTPInputProps) => {
                         outline: "none",
                         cursor: disabled ? "not-allowed" : "text",
                         opacity: disabled ? 0.5 : 1,
-                        transition: "border-color 0.15s ease",
-                        caretColor: "#5a2a08",
+                        transition: "all 0.12s var(--ease-quill)",
+                        caretColor: "#1e0f02",
                         letterSpacing: "0.05em",
+                        fontFamily: "var(--font-special-elite), monospace",
                     }}
                 />
             ))}

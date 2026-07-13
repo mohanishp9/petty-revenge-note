@@ -1,7 +1,7 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { FormEvent, useEffect, useMemo, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useSelector } from "react-redux";
 import { FileText, Mail, MessageCircle, NotebookPen, Plus, Trash2, UserRound, X, Bookmark } from "lucide-react";
@@ -48,7 +48,7 @@ function NoteCard({ note, active, onToggle, onDelete }: { note: Note; active: bo
             <div className="mb-4 flex items-center gap-3 pl-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-sm text-2xl" style={{ background: "rgba(120,80,20,0.12)", border: "1px solid rgba(120,80,20,0.2)" }}>{note.categoryEmoji}</div>
                 <div className="min-w-0 flex-1">
-                    <p className="font-special-elite truncate text-[12px] tracking-wide text-stone-800">{note.showUsername ? note.user.username : "Anonymous"}</p>
+                    <p className="font-special-elite truncate text-[12px] tracking-wide text-stone-800">{note.showUsername ? note.user.username : "Marked Anonymous"}</p>
                     <p className="font-crimson text-[12px] italic" style={{ color: "#8a6030" }}>{new Date(note.createdAt).toLocaleDateString()}</p>
                 </div>
             </div>
@@ -133,7 +133,7 @@ function CommentsPanel({
     );
 }
 
-export default function ProfilePage() {
+function ProfilePageContent() {
     const dispatch = useAppDispatch();
     const router = useRouter();
     const { user, accessToken, loading: authLoading } = useSelector((state: RootState) => state.auth);
@@ -149,9 +149,18 @@ export default function ProfilePage() {
     const [showUsername, setShowUsername] = useState(true);
     const [subject, setSubject] = useState("");
     const [content, setContent] = useState("");
-    const [categoryEmoji, setCategoryEmoji] = useState<(typeof CATEGORY_OPTIONS)[number]>("😂");
+    const [categoryEmoji, setCategoryEmoji] = useState<(typeof CATEGORY_OPTIONS)[number]>("😠");
     const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+    const searchParams = useSearchParams();
+
+    useEffect(() => {
+        if (searchParams.get("compose") === "true") {
+            setIsCreateModalOpen(true);
+            router.replace("/profile", { scroll: false });
+        }
+    }, [searchParams, router]);
 
     const activeNote = useMemo(() => notes.find((note) => note._id === activeCommentNoteId) ?? null, [activeCommentNoteId, notes]);
     const isCommentPanelOpen = Boolean(activeCommentNoteId);
@@ -188,7 +197,7 @@ export default function ProfilePage() {
             setShowUsername(true);
             setSubject("");
             setContent("");
-            setCategoryEmoji("😂");
+            setCategoryEmoji("😠");
             dispatch(resetCreateNote());
             dispatch(resetMyNotes());
             dispatch(getMyNotes({ page: 1, limit: NOTES_PER_PAGE }));
@@ -343,9 +352,9 @@ export default function ProfilePage() {
 
                             <form onSubmit={handleCreateSubmit} className="space-y-6 md:pl-10">
                                 <div className="grid gap-5 lg:grid-cols-[1.5fr_0.9fr]">
-                                    <label className="block">
-                                        <span className="font-special-elite mb-2 block text-[10px] uppercase tracking-[0.22em]" style={{ color: "#7a5a22" }}>Subject Line</span>
-                                        <input value={subject} onChange={(e) => setSubject(e.target.value)} className="font-im-fell w-full border-0 border-b bg-transparent px-0 py-2 text-2xl italic outline-none" style={{ borderBottom: "2px solid rgba(120,80,20,0.18)", color: "#3a2008" }} placeholder="Give this grievance a title" />
+                                    <label className="block ledger-input-group">
+                                        <span className="ledger-label">Subject Line</span>
+                                        <input value={subject} onChange={(e) => setSubject(e.target.value)} className="ledger-input font-im-fell text-2xl italic" placeholder="Give this grievance a title" />
                                     </label>
                                     <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
                                         <label className="block">
@@ -368,9 +377,9 @@ export default function ProfilePage() {
                                     </div>
                                 </div>
 
-                                <label className="block">
-                                    <span className="font-special-elite mb-2 block text-[10px] uppercase tracking-[0.22em]" style={{ color: "#7a5a22" }}>Main Entry</span>
-                                    <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={10} className="font-crimson w-full resize-none border-0 bg-transparent px-0 py-2 text-[18px] leading-[1.9] outline-none" style={{ color: "#3a2008" }} placeholder="Write the full account here, as though you were recording it in a real notebook page..." />
+                                <label className="block ledger-input-group">
+                                    <span className="ledger-label">Main Entry</span>
+                                    <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={10} className="ledger-input font-crimson resize-none text-[18px] leading-[1.9]" placeholder="Write the full account here, as though you were recording it in a real notebook page..." />
                                 </label>
 
                                 {createNoteError && <p className="font-crimson italic" style={{ color: "#8a2510" }}>{createNoteError}</p>}
@@ -397,5 +406,13 @@ export default function ProfilePage() {
                 />
             )}
         </div>
+    );
+}
+
+export default function ProfilePage() {
+    return (
+        <Suspense fallback={<div />}>
+            <ProfilePageContent />
+        </Suspense>
     );
 }

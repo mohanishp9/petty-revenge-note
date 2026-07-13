@@ -3,29 +3,29 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/app/providers";
 import Navbar from "@/components/Navbar";
-// import { Crimson_Text, IM_Fell_English, Special_Elite } from "next/font/google";
+import FloatingCompose from "@/components/FloatingCompose";
+import { Crimson_Text, IM_Fell_English, Special_Elite } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 
-// const crimsonText = Crimson_Text({
-//   subsets: ["latin"],
-//   weight: ["400", "600"],
-//   style: ["normal", "italic"],
-//   variable: "--font-crimson",
-// });
+const crimsonText = Crimson_Text({
+  subsets: ["latin"],
+  weight: ["400", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-crimson",
+});
 
-// const imFellEnglish = IM_Fell_English({
-//   subsets: ["latin"],
-//   weight: ["400"],
-//   style: ["normal", "italic"],
-//   variable: "--font-im-fell",
-// });
+const imFellEnglish = IM_Fell_English({
+  subsets: ["latin"],
+  weight: ["400"],
+  style: ["normal", "italic"],
+  variable: "--font-im-fell",
+});
 
-// const specialElite = Special_Elite({
-//   subsets: ["latin"],
-//   weight: ["400"],
-//   variable: "--font-special-elite",
-// });
-
+const specialElite = Special_Elite({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-special-elite",
+});
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -73,11 +73,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} bg-[linear-gradient(180deg,#fffdf8_0%,#fff9ee_40%,#f7f8fb_100%)] antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${crimsonText.variable} ${imFellEnglish.variable} ${specialElite.variable} bg-[#f2e4ba] antialiased`}
       >
         <Providers>
           <Navbar />
           <main>{children}</main>
+          <FloatingCompose />
           <Toaster position="top-right" />
         </Providers>
       </body>

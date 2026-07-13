@@ -117,29 +117,23 @@ const LoginForm = () => {
                     <form onSubmit={handleSubmit} className="space-y-5">
 
                         {/* Email */}
-                        <div>
-                            <label className="font-special-elite" htmlFor="email" style={{ display: "block", fontSize: 11, color: "#7a5a22", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "0.3rem" }}>
+                        <div className="ledger-input-group">
+                            <label className="ledger-label" htmlFor="email">
                                 {"Correspondent's Address"}
                             </label>
                             <input
-                                className="font-crimson"
+                                className="ledger-input"
                                 id="email"
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="your.grievance@mail.com"
-                                style={{
-                                    width: "100%", background: "transparent", border: "none",
-                                    borderBottom: "1.5px solid rgba(80,45,10,0.45)", borderRadius: 0,
-                                    padding: "0.3rem 0.1rem 0.4rem",
-                                    fontSize: 17, color: "#1c0f02", outline: "none"
-                                }}
                             />
                         </div>
 
                         {/* Password */}
-                        <div>
-                            <label className="font-special-elite" htmlFor="password" style={{ display: "block", fontSize: 11, color: "#7a5a22", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "0.3rem" }}>
+                        <div className="ledger-input-group">
+                            <label className="ledger-label" htmlFor="password">
                                 Secret Passphrase
                             </label>
                             <div className="relative">
@@ -149,13 +143,8 @@ const LoginForm = () => {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="known only to you..."
-                                    className="font-crimson"
-                                    style={{
-                                        width: "100%", background: "transparent", border: "none",
-                                        borderBottom: "1.5px solid rgba(80,45,10,0.45)", borderRadius: 0,
-                                        padding: "0.3rem 0.1rem 0.4rem", paddingRight: "2rem",
-                                        fontSize: 17, color: "#1c0f02", outline: "none"
-                                    }}
+                                    className="ledger-input"
+                                    style={{ paddingRight: "2rem" }}
                                 />
                                 <button
                                     type="button"
