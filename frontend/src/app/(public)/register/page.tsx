@@ -25,28 +25,6 @@ const clearPendingRegistration = () => {
     }
 };
 
-// Shared styles matching notebook aesthetic
-const labelStyle: React.CSSProperties = {
-    display: "block",
-    fontSize: 11,
-    color: "#7a5a22",
-    letterSpacing: "0.12em",
-    textTransform: "uppercase",
-    marginBottom: "0.3rem",
-};
-
-const inputStyle: React.CSSProperties = {
-    width: "100%",
-    background: "transparent",
-    border: "none",
-    borderBottom: "1.5px solid rgba(80,45,10,0.45)",
-    borderRadius: 0,
-    padding: "0.3rem 0.1rem 0.4rem",
-    fontSize: 17,
-    color: "#1c0f02",
-    outline: "none",
-};
-
 const submitButtonStyle = (loading: boolean): React.CSSProperties => ({
     width: "100%",
     padding: "0.75rem 1rem",
@@ -60,6 +38,14 @@ const submitButtonStyle = (loading: boolean): React.CSSProperties => ({
     color: "#3a1f05",
     cursor: loading ? "not-allowed" : "pointer",
 });
+
+const passwordStrength = (pwd: string) => {
+    let score = 0;
+    if (pwd.length >= 8) score++;
+    if (/[A-Z]/.test(pwd)) score++;
+    if (/[0-9]/.test(pwd)) score++;
+    return score;
+};
 
 // Component
 const Register = () => {
@@ -138,7 +124,7 @@ const Register = () => {
                     } else {
                         // Wrong OTP — backend message includes "X attempts remaining"
                         toast.error(message || "Invalid OTP. Please try again.");
-                        setOtpDigits(Array(6).fill("")); // clear boxes for re-entry
+                        // DO NOT CLEAR on wrong attempt so user can fix typo
                     }
                 } else if (status === 429) {
                     // Max verify attempts exceeded
@@ -167,16 +153,8 @@ const Register = () => {
             return;
         }
 
-        if (password.length < 8) {
-            toast.error("Password must have at least 8 characters");
-            return;
-        }
-        if (!/[A-Z]/.test(password)) {
-            toast.error("Password must contain at least one uppercase letter");
-            return;
-        }
-        if (!/[0-9]/.test(password)) {
-            toast.error("Password must contain at least one number");
+        if (passwordStrength(password) < 3) {
+            toast.error("Passphrase must contain at least 8 characters, one Capital letter and one number.");
             return;
         }
 
@@ -358,40 +336,38 @@ const Register = () => {
                     {/* STEP 1: Registration Details */}
                     {step === 1 && (
                         <form onSubmit={handleStep1Submit} className="space-y-5">
-                            <div>
-                                <label className="font-special-elite" htmlFor="username" style={labelStyle}>
+                            <div className="ledger-input-group">
+                                <label className="ledger-label" htmlFor="username">
                                     Identity Code
                                 </label>
                                 <input
-                                    className="font-crimson"
+                                    className="ledger-input"
                                     id="username"
                                     type="text"
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
                                     placeholder="Enter Your Identity Code"
                                     disabled={loading}
-                                    style={inputStyle}
                                 />
                             </div>
 
-                            <div>
-                                <label className="font-special-elite" htmlFor="email" style={labelStyle}>
+                            <div className="ledger-input-group">
+                                <label className="ledger-label" htmlFor="email">
                                     {"Correspondent's Address"}
                                 </label>
                                 <input
-                                    className="font-crimson"
+                                    className="ledger-input"
                                     id="email"
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="your.grievance@mail.com"
                                     disabled={loading}
-                                    style={inputStyle}
                                 />
                             </div>
 
-                            <div>
-                                <label className="font-special-elite" htmlFor="password" style={labelStyle}>
+                            <div className="ledger-input-group">
+                                <label className="ledger-label" htmlFor="password">
                                     Secret Passphrase
                                 </label>
                                 <div className="relative">
@@ -402,8 +378,8 @@ const Register = () => {
                                         onChange={(e) => setPassword(e.target.value)}
                                         placeholder="known only to you..."
                                         disabled={loading}
-                                        className="font-crimson"
-                                        style={inputStyle}
+                                        className="ledger-input"
+                                        style={{ paddingRight: "2rem" }}
                                     />
                                     <button
                                         type="button"
@@ -414,6 +390,12 @@ const Register = () => {
                                     >
                                         {showPassword ? <EyeOff size={16} strokeWidth={1.5} /> : <Eye size={16} strokeWidth={1.5} />}
                                     </button>
+                                </div>
+                                {/* Password Strength Bar */}
+                                <div className="flex gap-1 mt-3">
+                                    <div className={`h-1 flex-1 transition-all ${passwordStrength(password) > 0 ? "bg-[#8a2510]" : "bg-[#8a2510]/20"}`} />
+                                    <div className={`h-1 flex-1 transition-all ${passwordStrength(password) > 1 ? "bg-[#8a2510]" : "bg-[#8a2510]/20"}`} />
+                                    <div className={`h-1 flex-1 transition-all ${passwordStrength(password) > 2 ? "bg-[#8a2510]" : "bg-[#8a2510]/20"}`} />
                                 </div>
                             </div>
 

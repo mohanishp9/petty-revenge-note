@@ -6,7 +6,7 @@ import { Heart, MessageCircle, SmilePlus, Bookmark, Share2, Flag } from "lucide-
 import { useAppDispatch } from "@/app/hook/dispatch";
 import { reactToNote, toggleLike } from "@/features/publicNote/publicNoteSlice";
 import type { Note } from "@/features/publicNote/types";
-import { DEFAULT_REACTIONS, getReactionTotal, formatReactionSummary } from "@/utils/reactionUtils";
+import { DEFAULT_REACTIONS, getReactionTotal, getReactionSummaryList, REACTION_ICON_MAP } from "@/utils/reactionUtils";
 import { trackShareAPI } from "@/features/publicNote/publicNoteApi";
 import toast from "react-hot-toast";
 import ReportModal from "./ReportModal";
@@ -100,7 +100,7 @@ const NoteCard = ({
 
   return (
     <article
-      className="relative rounded-sm transition duration-300 ease-out"
+      className="relative rounded-sm transition-all duration-[var(--ease-quill)] duration-300 ease-out"
       style={{
         backgroundColor: "#f2e2b0",
         backgroundImage: "repeating-linear-gradient(transparent, transparent 27px, rgba(120,80,20,0.15) 28px)",
@@ -132,7 +132,7 @@ const NoteCard = ({
         </div>
         <div className="min-w-0 flex-1">
           <p className="font-special-elite truncate text-[12px] tracking-wide text-stone-800">
-            {note.showUsername ? note.user.username : "Anonymous"}
+            {note.showUsername ? note.user.username : "Marked Anonymous"}
           </p>
           <p
             className="font-crimson text-[12px] italic"
@@ -190,21 +190,32 @@ const NoteCard = ({
       </p>
 
       <div
-        className="font-crimson mb-4 pl-4 pb-3 text-[13px] italic"
+        className="font-crimson mb-4 pl-4 pb-3 text-[13px] italic flex items-center h-[34px]"
         style={{
           color: "#7a5020",
           borderBottom: "1px solid rgba(100,60,10,0.15)",
         }}
       >
-        {formatReactionSummary(reactionCounts)}
+        {getReactionSummaryList(reactionCounts).length === 0 ? "No reactions yet" : (
+          <div className="flex gap-4">
+            {getReactionSummaryList(reactionCounts).map(([emoji, count]) => {
+              const Icon = REACTION_ICON_MAP[emoji];
+              return (
+                <span key={emoji} className="flex items-center gap-1.5" title={emoji}>
+                  {Icon ? <Icon className="h-[14px] w-[14px]" /> : emoji} {count}
+                </span>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-4 gap-2 pl-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pl-3">
         <button
           type="button"
           onClick={handleLikeClick}
           disabled={!isLoggedIn}
-          className="font-special-elite flex items-center justify-center gap-2 rounded-sm px-3 py-2 text-[10px] uppercase tracking-wider transition"
+          className="font-special-elite flex flex-1 items-center justify-center gap-2 rounded-sm px-3 py-2 text-[10px] uppercase tracking-wider transition-all duration-[var(--ease-quill)]"
           style={{
             border: `1px solid ${hasLiked ? "rgba(160,40,20,0.35)" : "rgba(100,60,10,0.2)"}`,
             background: hasLiked ? "rgba(160,40,20,0.08)" : "transparent",
@@ -228,7 +239,7 @@ const NoteCard = ({
               setIsReactionMenuOpen((current) => !current);
             }}
             disabled={!isLoggedIn}
-            className="font-special-elite flex w-full items-center justify-center gap-2 rounded-sm px-3 py-2 text-[10px] uppercase tracking-wider transition"
+            className="font-special-elite flex flex-1 items-center justify-center gap-2 rounded-sm px-3 py-2 text-[10px] uppercase tracking-wider transition-all duration-[var(--ease-quill)]"
             style={{
               border: `1px solid ${userReaction ? "rgba(160,120,20,0.4)" : "rgba(100,60,10,0.2)"}`,
               background: userReaction ? "rgba(160,120,20,0.1)" : "transparent",
@@ -237,7 +248,10 @@ const NoteCard = ({
             }}
           >
             {userReaction ? (
-              <span style={{ fontSize: 16 }}>{userReaction}</span>
+              (() => {
+                const Icon = REACTION_ICON_MAP[userReaction];
+                return Icon ? <Icon className="h-[18px] w-[18px]" /> : <span style={{ fontSize: 16 }}>{userReaction}</span>;
+              })()
             ) : (
               <SmilePlus className="h-[18px] w-[18px]" />
             )}
@@ -254,20 +268,24 @@ const NoteCard = ({
               }}
             >
               {DEFAULT_REACTIONS.map((reaction) => (
-                <button
-                  key={reaction}
-                  type="button"
-                  onClick={() => handleReactionSelect(reaction)}
-                  className="flex h-10 w-10 items-center justify-center rounded-sm text-xl transition hover:scale-110"
-                  style={{
-                    background:
-                      userReaction === reaction
-                        ? "rgba(120,80,20,0.15)"
-                        : "transparent",
-                  }}
-                >
-                  {reaction}
-                </button>
+                  <button
+                    key={reaction}
+                    type="button"
+                    onClick={() => handleReactionSelect(reaction)}
+                    className="flex h-10 w-10 items-center justify-center rounded-sm text-xl transition-all duration-[var(--ease-quill)] hover:scale-110 hover:text-[#8a2510]"
+                    style={{
+                      color: userReaction === reaction ? "#8a2510" : "#6a4515",
+                      background:
+                        userReaction === reaction
+                          ? "rgba(120,80,20,0.15)"
+                          : "transparent",
+                    }}
+                  >
+                    {(() => {
+                      const Icon = REACTION_ICON_MAP[reaction];
+                      return Icon ? <Icon className="h-5 w-5" /> : reaction;
+                    })()}
+                  </button>
               ))}
             </div>
           )}
@@ -276,7 +294,7 @@ const NoteCard = ({
         <button
           type="button"
           onClick={() => onCommentToggle(note._id)}
-          className="font-special-elite flex items-center justify-center gap-2 rounded-sm px-3 py-2 text-[10px] uppercase tracking-wider transition"
+          className="font-special-elite flex flex-1 items-center justify-center gap-2 rounded-sm px-3 py-2 text-[10px] uppercase tracking-wider transition-all duration-[var(--ease-quill)]"
           style={{
             border: `1px solid ${isCommentsOpen ? "rgba(150,90,10,0.45)" : "rgba(100,60,10,0.2)"}`,
             background: isCommentsOpen ? "rgba(150,90,10,0.1)" : "transparent",
@@ -297,11 +315,11 @@ const NoteCard = ({
             onSaveToggle(note._id);
           }}
           title={isSaved ? "Remove bookmark" : "Bookmark this note"}
-          className="font-special-elite flex items-center justify-center gap-2 rounded-sm px-3 py-2 text-[10px] uppercase tracking-wider transition"
+          className="font-special-elite flex flex-1 items-center justify-center gap-2 rounded-sm px-3 py-2 text-[10px] uppercase tracking-wider transition-all duration-[var(--ease-quill)]"
           style={{
-            border: `1px solid ${isSaved ? "rgba(80,100,160,0.4)" : "rgba(100,60,10,0.2)"}`,
-            background: isSaved ? "rgba(80,100,160,0.1)" : "transparent",
-            color: isSaved ? "#354080" : "#6a4515",
+            border: `1px solid ${isSaved ? "rgba(160,40,20,0.35)" : "rgba(100,60,10,0.2)"}`,
+            background: isSaved ? "rgba(160,40,20,0.08)" : "transparent",
+            color: isSaved ? "#8a2510" : "#6a4515",
             opacity: !isLoggedIn ? 0.6 : 1,
           }}
         >
@@ -313,7 +331,7 @@ const NoteCard = ({
           type="button"
           onClick={handleShare}
           title="Share this note"
-          className="font-special-elite flex items-center justify-center gap-2 rounded-sm px-3 py-2 text-[10px] uppercase tracking-wider transition hover:bg-[#6a4515]/10"
+          className="font-special-elite flex flex-1 items-center justify-center gap-2 rounded-sm px-3 py-2 text-[10px] uppercase tracking-wider transition-all duration-[var(--ease-quill)] hover:bg-[#6a4515]/10"
           style={{
             border: "1px solid rgba(100,60,10,0.2)",
             background: "transparent",
