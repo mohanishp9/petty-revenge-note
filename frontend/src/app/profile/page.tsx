@@ -149,7 +149,7 @@ function ProfilePageContent() {
     const [showUsername, setShowUsername] = useState(true);
     const [subject, setSubject] = useState("");
     const [content, setContent] = useState("");
-    const [categoryEmoji, setCategoryEmoji] = useState<(typeof CATEGORY_OPTIONS)[number]>("😂");
+    const [categoryEmoji, setCategoryEmoji] = useState<(typeof CATEGORY_OPTIONS)[number]>("😠");
     const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
@@ -197,7 +197,7 @@ function ProfilePageContent() {
             setShowUsername(true);
             setSubject("");
             setContent("");
-            setCategoryEmoji("😂");
+            setCategoryEmoji("😠");
             dispatch(resetCreateNote());
             dispatch(resetMyNotes());
             dispatch(getMyNotes({ page: 1, limit: NOTES_PER_PAGE }));
