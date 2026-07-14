@@ -39,7 +39,7 @@
 ## Features & Implementation
 
 ### Notes
-Users create notes with a subject, content, category emoji, and optional username visibility. Notes support likes, emoji reactions (😂 😡 😳 😭), comments with replies, saves, and share count tracking.
+Users create notes with a subject, content, category emoji, and optional username visibility. Notes support likes, emoji reactions (😠 🙄 💀 🍿 🔥), comments with replies, saves, and share count tracking.
 
 ### Admin & Moderation
 The admin panel (isolated Next.js app) includes tools for managing users, notes, and comments. It features:
@@ -100,14 +100,19 @@ If you skip this step, the app will automatically fall back to standard regex se
    *Example `backend/.env`:*
    ```env
    PORT=3001
-   MONGO_URI=mongodb://host.docker.internal:27017/petty-revenge
-   REDIS_HOST=redis
-   REDIS_PORT=6379
-   JWT_ACCESS_SECRET=your_access_secret_key
-   JWT_REFRESH_SECRET=your_refresh_secret_key
-   BREVO_API_KEY=your_brevo_key
-   BREVO_FROM_EMAIL=noreply@yourdomain.com
-   NODE_ENV=development
+   MONGO_URI=Your MongoDB connection string here
+   JWT_SECRET=Your JWT secret here
+   JWT_REFRESH_SECRET=Your JWT refresh secret here
+   JWT_ACCESS_SECRET=Your JWT access secret here
+
+   #BREVO
+   BREVO_API_KEY=Your Brevo API key here
+   BREVO_FROM_EMAIL=Your Brevo from email here
+
+   # Redis
+   REDIS_HOST=Your Redis host here (default is 127.0.0.1)
+   REDIS_PORT=Your Redis port here (default is 6379)
+   NODE_ENV=Your Node environment here (development, production, etc.)
    ```
 
    > **Note:** The example above uses `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` — both are required. The README previously listed `JWT_SECRET` which does not match the actual `env.ts` config and will cause the server to fail to start.
